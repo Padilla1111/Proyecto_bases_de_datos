@@ -6,6 +6,7 @@ Este proyecto analiza los incidentes criminales reportados en la ciudad de Chica
 
 Se trata de un conjunto de datos público, de gran escala y con estructura adecuada para fines académicos y técnicos.
 
+
 ---
 
 ## Descripción Técnica y Estructura
