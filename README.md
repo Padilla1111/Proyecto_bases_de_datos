@@ -1,7 +1,7 @@
 # Proyecto BD: Análisis de Criminalidad en Chicago (2001–Presente)
 
 ## Integrantes
-* **Luis Fernando Reyes Altamirano** - Clave Única: 214734 - [LuisRyes](Tu Clave)
+* **Luis Fernando Reyes Altamirano** - Clave Única: 214734 - [LuisRyes](https://github.com/LuisRyes)
 * Tu Clave - Clave Única: Tu Clave - [Perfil de GitHub](Tu Clave)
 * Tu Clave - Clave Única: Tu Clave - [Perfil de GitHub](Tu Clave)
 
