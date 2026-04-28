@@ -1,14 +1,14 @@
-# Proyecto BD: Análisis de Criminalidad en Chicago (2001–Presente)
+# Proyecto BD: Análisis de Criminalidad en Chicago (Último Año)
 
 ## Integrantes
 * **Luis Fernando Reyes Altamirano** - Clave Única: 214734 - [LuisRyes](https://github.com/LuisRyes)
 * **Ismael Cabrera Arroyo** - Clave Única: 217632 - [mayelmais](https://github.com/mayelmais)
 * **Rodrigo Flores Covarrubias** - Clave Única: 217893 - [covaconv](https://github.com/covaconv)
-* **Juan Pablo Padilla** -Clave Única: 213650 - [Padilla1111](https://github.com/Padilla1111)
+* **Juan Pablo Padilla** - Clave Única: 213650 - [Padilla1111](https://github.com/Padilla1111)
 
 ## Introducción
 
-Este proyecto analiza los incidentes criminales reportados en la ciudad de Chicago desde el año 2001 hasta la actualidad. La información es recolectada por el **Chicago Police Department** mediante el sistema CLEAR (*Citizen Law Enforcement Analysis and Reporting*) y se publica a través del portal de datos abiertos de la ciudad.
+Este proyecto analiza los incidentes criminales reportados en la ciudad de Chicago. Originalmente enfocado en el histórico desde 2001, para fines de replicación y eficiencia técnica se utiliza el dataset de incidentes del último año. La información es recolectada por el **Chicago Police Department** mediante el sistema CLEAR (*Citizen Law Enforcement Analysis and Reporting*) y se publica a través del **Chicago Data Portal**.
 
 * **Propósito de recolección:** Promover la transparencia, la rendición de cuentas institucional y facilitar el análisis de seguridad pública para la toma de decisiones.
 * **Frecuencia de actualización:** Diaria.
@@ -18,7 +18,7 @@ El objetivo principal es transformar el conjunto de datos original de una estruc
 
 ### Descripción Técnica y de Atributos
 
-El dataset cuenta con más de 20 atributos que permiten un modelado relacional avanzado, facilitando el trabajo con integridad referencial, índices y optimización de consultas.
+El dataset seleccionado cuenta con la variedad necesaria de atributos para un modelado relacional avanzado, facilitando el trabajo con integridad referencial, índices y optimización de consultas.
 
 | Atributo | Descripción | Tipo |
 | :--- | :--- | :--- |
@@ -49,13 +49,13 @@ El análisis de datos de criminalidad conlleva una responsabilidad ética signif
 * **Privacidad y Anonimato:** Se respetará el anonimato de los datos a nivel de cuadra, evitando cruces de información que pudieran facilitar la reidentificación de víctimas o individuos involucrados.
 * **Reconocimiento de Sesgos:** Se asume que los datos representan incidentes *reportados* y no la totalidad de los delitos ocurridos, considerando factores institucionales y de subdenuncia.
 * **Prevención de la Estigmatización:** El análisis espacial se presentará con el contexto social necesario para evitar generalizaciones o prejuicios sobre zonas geográficas específicas.
-* **Responsabilidad en el Uso:** Analizar datos de *open data* implica responsabilidad; aunque sean públicos, pueden permitir reidentificación o amplificar sesgos institucionales. El enfoque del proyecto es técnico y estructural, evaluando el daño potencial, ya que los datos abiertos no equivalen a un uso éticamente neutro.
+* **Responsabilidad en el Uso:** Analizar datos de *open data* implica responsabilidad; aunque sean públicos, pueden permitir reidentificación o amplificar sesgos institucionales. El enfoque del proyecto es técnico y estructural, ya que los datos abiertos no equivalen a un uso éticamente neutro.
 
 ## Fuente de datos
 
-Para este proyecto se utilizan los datos proporcionados por el portal de datos de Chicago sobre crímenes. Se puede acceder a los datos en [este link](https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2).
+Para este proyecto se utilizan los datos proporcionados por el portal de datos de Chicago. Se puede acceder a los datos en [este link (Crimes - One Year Prior to Present)](https://data.cityofchicago.org/Public-Safety/Crimes-One-year-prior-to-present/x2n5-8w5q/about_data).
 
-* **Escala:** El conjunto de datos original cuenta con más de 7.9 millones de registros; para este proyecto se trabajará con un subconjunto superior a las 233,025 tuplas.
+* **Escala:** El dataset contiene aproximadamente 200,000 registros, lo que cumple con el requisito de carga mínima (>5,000 tuplas).
 
 Las instrucciones de replicación del proyecto asumen que los datos se encuentran almacenados en formato `CSV` bajo el nombre `./data/raw_data.csv`.
 
