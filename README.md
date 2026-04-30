@@ -78,3 +78,13 @@ Las instrucciones de replicación del proyecto asumen que los datos se encuentra
     ├── 01_raw_data_exploration.sql                   <- Consultas de exploración de datos en bruto (i.e., soporte de actividad B)
     ├── ⋅⋅⋅                                           <- Otras consultas en caso de ser requeridas
     └── 0N_analytical_queries.sql                     <- Consultas de interés sobre los datos normalizados (i.e., soporte de actividad E)
+
+# Carga inicial y análisis preliminar
+
+## Carga inicial
+
+En primer lugar se deberá crear una base de datos exclusiva para este proyecto. Para ello se puede ejecutar el siguiente comando en `psql`:
+
+```sql
+CREATE DATABASE inspections;
+
