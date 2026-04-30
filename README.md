@@ -77,7 +77,8 @@ Las instrucciones de replicación del proyecto asumen que los datos se encuentra
 └── exploration_queries                               <- Scripts de SQL para exploración de datos
     ├── 01_raw_data_exploration.sql                   <- Consultas de exploración de datos en bruto (i.e., soporte de actividad B)
     ├── ⋅⋅⋅                                           <- Otras consultas en caso de ser requeridas
-    └── 0N_analytical_queries.sql                     <- Consultas de interés sobre los datos normalizados (i.e., soporte de actividad E)
+    └── 0N_analytical_queries.sql                     <- Consultas de interés sobre los datos normalizados (i.e., soporte de actividad 
+```
 
 # Carga inicial y análisis preliminar
 
