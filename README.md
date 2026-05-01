@@ -16,9 +16,6 @@ Este proyecto analiza los incidentes criminales reportados en la ciudad de Chica
 **Objetivo del Proyecto:**
 El objetivo principal es transformar el conjunto de datos original de una estructura plana a un **esquema relacional robusto en PostgreSQL**. Se aplicarán procesos de limpieza, estandarización y normalización hasta **Cuarta Forma Normal (4NF)** para eliminar redundancias y asegurar la consistencia de la información. Posteriormente, se desarrollarán consultas SQL avanzadas —incluyendo agregaciones, funciones de ventana e índices— para analizar tendencias temporales, tasas de arresto y distribución geográfica de incidentes.
 
-### Descripción Técnica y de Atributos
-
-El dataset seleccionado cuenta con la variedad necesaria de atributos para un modelado relacional avanzado, facilitando el trabajo con integridad referencial, índices y optimización de consultas.
 
 ### Descripción Técnica de Atributos (Dataset Original)
 
