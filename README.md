@@ -91,7 +91,7 @@ CREATE DATABASE crimes_chicago;
 Posteriormente, debemos conectarnos a dicha base de datos empleando:
 
 ```bash
-\c crime_chicago
+\c crimes_chicago
 ```
 Finalmente, para cargar los datos en bruto se debe ejecutar el siguiente comando en una sesión de línea de comandos `psql`:
 (Nota: esto es la ruta donde tu guardaste el archivo, depende de donde lo guardaste)
