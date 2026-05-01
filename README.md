@@ -53,19 +53,23 @@ El análisis de datos de criminalidad conlleva una responsabilidad ética signif
 ## Fuente de datos
 
 Para este proyecto se utilizan los datos proporcionados por el portal de datos de Chicago. Se puede acceder a los datos en [este link (Crimes - One Year Prior to Present)](https://data.cityofchicago.org/Public-Safety/Crimes-One-year-prior-to-present/x2n5-8w5q/about_data).
+* **Instrucciones:** Para descargar el archivo exacto, haz clic en el botón **"Export"** en el portal y selecciona el formato **CSV**.
 
 * **Escala:** El dataset contiene aproximadamente 200,000 registros, lo que cumple con el requisito de carga mínima (>5,000 tuplas).
 
-Las instrucciones de replicación del proyecto asumen que los datos se encuentran almacenados en formato `CSV` bajo el nombre `./data/raw_data.csv`.
-
+### ⚙️ Configuración para Replicación
+Para que los scripts de carga funcionen sin errores, es obligatorio seguir este orden:
+1. Crea una carpeta llamada `data` en la raíz del proyecto (si no existe).
+2. Guarda el archivo descargado dentro de `/data` con el nombre exacto: `raw_data.csv`.
+3. El archivo `.gitignore` ya está configurado para que este CSV no se suba al repositorio.
 ## Documentación
 
 ### Estructura del repositorio
 ```text
 ├── README.md                                         <- Documentación para desarrolladores de este proyecto (i.e., reporte escrito)
-├── data
-│   ├── .gitignore
-│   └── raw_data.csv                                  <- Datos en formato CSV como vienen de la fuente original
+├── data                                              <- Carpeta para almacenamiento local de datos (Ignorada por Git)
+│   ├── .gitignore                                    <- Configuración de archivos excluidos
+│   └── raw_data.csv                                  <- (Usuario debe descargar este archivo localmente desde la pagina de Chicago)
 │
 ├── pipeline_scripts                                  <- Scripts de SQL para ejecución del pipeline de datos
 │   ├── 01_raw_data_schema_creation_and_load.sql      <- Script de carga inicial (i.e., actividad B)
@@ -86,12 +90,12 @@ Las instrucciones de replicación del proyecto asumen que los datos se encuentra
 En primer lugar se deberá crear una base de datos exclusiva para este proyecto. Para ello se puede ejecutar el siguiente comando en `psql`:
 
 ```sql
-CREATE DATABASE crimes_chicago;
+CREATE DATABASE crime_chicago;
 ```
 Posteriormente, debemos conectarnos a dicha base de datos empleando:
 
 ```bash
-\c crimes_chicago
+\c crime_chicago
 ```
 Finalmente, para cargar los datos en bruto se debe ejecutar el siguiente comando en una sesión de línea de comandos `psql`:
 (Nota: esto es la ruta donde tu guardaste el archivo, depende de donde lo guardaste)
