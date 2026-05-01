@@ -20,29 +20,31 @@ El objetivo principal es transformar el conjunto de datos original de una estruc
 
 El dataset seleccionado cuenta con la variedad necesaria de atributos para un modelado relacional avanzado, facilitando el trabajo con integridad referencial, índices y optimización de consultas.
 
-| Atributo | Descripción | Tipo |
-| :--- | :--- | :--- |
-| **ID** | Identificador único del registro de incidencia. | Numérico |
-| **Case Number** | Número de registro oficial asignado al caso. | Texto |
-| **Date** | Fecha y hora en la que ocurrió el incidente. | Temporal |
-| **Block** | Dirección parcialmente anonimizada (nivel de cuadra). | Texto |
-| **IUCR** | Código de Reporte de Crimen Uniforme de Illinois. | Texto |
-| **Primary Type** | Clasificación principal del delito según el código IUCR. | Categórico |
-| **Description** | Subclasificación detallada del tipo de delito. | Categórico |
-| **Location Description** | Descripción del tipo de lugar donde ocurrió el evento. | Categórico |
-| **Arrest** | Indica si el incidente resultó en un arresto (Booleano). | Categórico |
-| **Domestic** | Indica si el incidente fue de violencia doméstica (Booleano). | Categórico |
-| **Beat** | Área patrullada más pequeña de la policía de Chicago. | Numérico |
-| **District** | Distrito policial donde ocurrió el incidente. | Numérico |
-| **Ward** | Distrito electoral (City Council) donde ocurrió el incidente. | Numérico |
-| **Community Area** | Área comunitaria de la ciudad de Chicago. | Numérico |
-| **FBI Code** | Clasificación del crimen bajo estándares del FBI. | Categórico |
-| **Year** | Año en que ocurrió el incidente. | Numérico |
-| **Updated On** | Fecha de la última actualización del registro. | Temporal |
-| **Latitude** | Coordenada de latitud de la ubicación exacta. | Numérico |
-| **Longitude** | Coordenada de longitud de la ubicación exacta. | Numérico |
-| **X Coordinate** | Coordenada X del sistema de proyección de la ciudad. | Numérico |
-| **Y Coordinate** | Coordenada Y del sistema de proyección de la ciudad. | Numérico |
+### Descripción Técnica de Atributos (Dataset Original)
+
+Para la fase `raw`, se ha respetado la estructura del archivo fuente del último año. La siguiente tabla describe los atributos según aparecen en el CSV original:
+
+| Atributo | Correspondencia CSV | Descripción | Tipo Inicial (Raw) |
+| :--- | :--- | :--- | :--- |
+| **Case Number** | `CASE#` | Número de registro oficial asignado al caso por la policía. | Texto |
+| **Date of Occurrence**| `DATE OF OCCURRENCE` | Fecha y hora exacta del incidente. | Texto (a limpiar) |
+| **Block** | `BLOCK` | Dirección anonimizada a nivel de cuadra. | Texto |
+| **IUCR** | `IUCR` | Illinois Uniform Crime Reporting code (Código de reporte de crimen). | Texto |
+| **Primary Description**| `PRIMARY DESCRIPTION` | Categoría principal del delito (basada en el código IUCR). | Texto |
+| **Secondary Description**| `SECONDARY DESCRIPTION` | Detalle específico o subcategoría del delito cometido. | Texto |
+| **Location Description**| `LOCATION DESCRIPTION` | Tipo de lugar donde ocurrió el evento (ej. Calle, Residencia). | Texto |
+| **Arrest** | `ARREST` | Indica si el incidente resultó en un arresto ("true"/"false"). | Texto (Booleano) |
+| **Domestic** | `DOMESTIC` | Indica si fue un incidente relacionado con violencia doméstica. | Texto (Booleano) |
+| **Beat** | `BEAT` | Identificador del área de patrullaje más pequeña. | Texto |
+| **Ward** | `WARD` | Distrito electoral o concejalía donde ocurrió el incidente. | Texto |
+| **FBI CD** | `FBI CD` | Código de clasificación del crimen bajo estándares del FBI. | Texto |
+| **X Coordinate** | `X COORDINATE` | Coordenada X del sistema de proyección local de la ciudad. | Texto |
+| **Y Coordinate** | `Y COORDINATE` | Coordenada Y del sistema de proyección local de la ciudad. | Texto |
+| **Latitude** | `LATITUDE` | Latitud de la ubicación exacta del incidente. | Numérico |
+| **Longitude** | `LONGITUDE` | Longitud de la ubicación exacta del incidente. | Numérico |
+| **Location** | `LOCATION` | Tupla combinada de coordenadas (Latitud, Longitud). | Texto |
+
+> **Nota sobre el Identificador (ID):** A diferencia del dataset histórico completo, el archivo de "Último Año" no incluye una columna `ID` numérica incremental en la primera posición. Se ha decidido mantener el esquema original en esta fase; se generarán llaves primarias subrogadas y únicas durante la **Actividad D (Normalización)** para garantizar la integridad referencial y cumplir con las formas normales.
 
 **Consideraciones Éticas:**
 El análisis de datos de criminalidad conlleva una responsabilidad ética significativa, por lo que el equipo se adhiere a los siguientes criterios:
@@ -87,5 +89,15 @@ Las instrucciones de replicación del proyecto asumen que los datos se encuentra
 En primer lugar se deberá crear una base de datos exclusiva para este proyecto. Para ello se puede ejecutar el siguiente comando en `psql`:
 
 ```sql
-CREATE DATABASE inspections;
+CREATE DATABASE crimes_chicago;
+```
+Posteriormente, debemos conectarnos a dicha base de datos empleando:
 
+```bash
+\c crime_chicago
+```
+Finalmente, para cargar los datos en bruto se debe ejecutar el siguiente comando en una sesión de línea de comandos `psql`:
+(Nota: esto es la ruta donde tu guardaste el archivo, depende de donde lo guardaste)
+```bash
+\i pipeline_scripts/01_raw_data_schema_creation_and_load.sql
+```
