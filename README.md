@@ -92,7 +92,13 @@ En primer lugar se deberá crear una base de datos exclusiva para este proyecto.
 ```sql
 CREATE DATABASE crime_chicago;
 ```
+### 2. Ejecución del Script de Carga
+
+Ejecutar el script de carga desde la **raíz del proyecto** en tu terminal:
+```bash
+psql -d crime_chicago -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
 Posteriormente, debemos conectarnos a dicha base de datos empleando:
+```
 
 ```bash
 \c crime_chicago
