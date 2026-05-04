@@ -100,3 +100,4 @@ Esto creará el schema, la tabla y cargará los datos automáticamente.
 ```bash
 psql -U postgres -d crimenes -c "SELECT COUNT(*) FROM rawc.crimes;"
 ```
+## Análisis preliminar
