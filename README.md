@@ -85,26 +85,18 @@ Para que los scripts de carga funcionen sin errores, es obligatorio seguir este 
 
 # Carga inicial y análisis preliminar
 
-## Carga inicial
+## Carga Inicial y Ejecución del Script
 
-En primer lugar se deberá crear una base de datos exclusiva para este proyecto. Para ello se puede ejecutar el siguiente comando en `psql`:
-
-```sql
-CREATE DATABASE crime_chicago;
-```
-### 2. Ejecución del Script de Carga
-
-Ejecutar el script de carga desde la **raíz del proyecto** en tu terminal:
-```bash
-psql -d crime_chicago -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
-Posteriormente, debemos conectarnos a dicha base de datos empleando:
-```
+### Desde la raíz del proyecto, ejecuta:
 
 ```bash
-\c crime_chicago
+psql -U [tuUsuario] -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
 ```
-Finalmente, para cargar los datos en bruto se debe ejecutar el siguiente comando en una sesión de línea de comandos `psql`:
-(Nota: esto es la ruta donde tu guardaste el archivo, depende de donde lo guardaste)
+
+Esto creará el schema, la tabla y cargará los datos automáticamente.
+
+### Verificar que funcionó:
+
 ```bash
-\i pipeline_scripts/01_raw_data_schema_creation_and_load.sql
+psql -U postgres -d crimenes -c "SELECT COUNT(*) FROM rawc.crimes;"
 ```
