@@ -103,3 +103,78 @@ Esto creará el schema, la tabla y cargará los datos automáticamente.
 psql -U postgres -d crimenes -c "SELECT COUNT(*) FROM rawc.crimes;"
 ```
 ## Análisis preliminar
+# Análisis Exploratorio de Datos
+
+## Descripción de Columnas y Valores Únicos
+ 
+Total de tuplas en la tabla: **232,588**
+ 
+| Columna | Valores Únicos | Descripción |
+|---|---|---|
+| `case_number` | 232,565 | 23 menos que el total de tuplas, lo que indica la presencia de duplicados. Es candidata a llave primaria una vez que se realice la limpieza de duplicados. |
+| `date_occurrence` | 120,828 | Representa fecha y hora exacta del incidente en formato `MM/DD/YYYY HH:MI:SS AM/PM`. La alta cardinalidad es esperada. Sugiere tipo de dato `TIMESTAMP`. |
+| `block` | 27,971 | Partición geográfica a nivel calle dentro de Chicago. Variable categórica de alta cardinalidad. |
+| `iucr` | 332 | Código categórico del Illinois Uniform Crime Reporting. Clasifica el tipo de crimen. |
+| `primary_description` | 31 | Categoría principal del crimen. Baja cardinalidad confirma que es una variable categórica con valores predefinidos. |
+| `secondary_description` | 310 | Subcategoría del crimen, complementa a `primary_description` con mayor detalle. |
+| `location_description` | 131 | Tipo de lugar donde ocurrió el crimen (calle, residencia, etc.). Variable categórica predefinida. |
+| `fbi_cd` | 26 | Código categórico del FBI que clasifica el crimen según estándares federales. |
+| `arrest` | 2 | Variable booleana que indica si hubo arresto. |
+| `domestic` | 2 | Variable booleana que indica si el crimen fue de violencia doméstica. |
+| `beat` | 274 | Unidad de patrullaje policial en Chicago. Variable categórica que representa la partición geográfica más pequeña. |
+| `ward` | 51 | Distrito político-administrativo de Chicago. Variable categórica con 50 distritos oficiales más un posible valor nulo o especial. |
+| `x_coordinate` | 48,869 | Coordenada X en el sistema de coordenadas proyectadas estatal de Illinois (ILCS). Tipo de dato `FLOAT`. |
+| `y_coordinate` | 67,348 | Coordenada Y en el sistema de coordenadas proyectadas estatal de Illinois (ILCS). Tipo de dato `FLOAT`. |
+| `latitude` | 112,597 | Coordenada geográfica en el sistema WGS84. Alta cardinalidad esperada dado que representa posiciones precisas. Tipo de dato `FLOAT`. |
+| `longitude` | 112,596 | Coordenada geográfica en el sistema WGS84. Alta cardinalidad esperada dado que representa posiciones precisas. Tipo de dato `FLOAT`. |
+| `location` | 112,624 | Campo compuesto que combina latitud y longitud en formato `(lat, long)`. Redundante con las columnas `latitude` y `longitude`. |
+ 
+## Rango Temporal
+ 
+El campo `date_occurrence` está almacenado en formato `MM/DD/YYYY HH:MI:SS AM/PM` y cubre exactamente un año de registros:
+ 
+| | Valor |
+|---|---|
+| Fecha mínima | 2025-04-29 05:02:00 |
+| Fecha máxima | 2026-04-28 00:00:00 |
+ 
+## Rango Geográfico
+ 
+Se verificó que los rangos de latitud y longitud son consistentes con la ubicación geográfica de Chicago. Los 113 registros con coordenadas vacías fueron excluidos de este cálculo.
+ 
+| | Mínimo | Máximo |
+|---|---|---|
+| `latitude` | 41.644608279 | 42.022547568 |
+| `longitude` | -87.928903079 | -87.524529378 |
+ 
+## Conteo de Valores Nulos y Vacíos
+ 
+No se encontraron valores `NULL` en ninguna columna del dataset. Sin embargo, se identificaron valores vacíos (`''`) que funcionalmente equivalen a nulos:
+ 
+| Columna | Valores Vacíos |
+|---|---|
+| `location_description` | 1,133 |
+| `x_coordinate` | 113 |
+| `y_coordinate` | 113 |
+| `latitude` | 113 |
+| `longitude` | 113 |
+| `location` | 113 |
+| `ward` | 1 |
+ 
+Los 113 registros sin coordenadas son consistentes entre sí — cuando falta una coordenada, todas las columnas geográficas quedan vacías. Estos valores vacíos serán convertidos a `NULL` durante la limpieza para mantener consistencia en el esquema.
+ 
+## Duplicados
+ 
+### Duplicados en `case_number`
+ 
+Se encontraron 18 números de caso repetidos en el dataset, algunos apareciendo hasta 4 veces. Al analizar estos registros en detalle, se observó que los duplicados comparten exactamente los mismos valores en todas las columnas excepto en `date_occurrence`, donde las horas registradas son cercanas entre sí pero distintas. Por ejemplo, el caso `JJ309322` aparece 4 veces con horas de 2:50 AM, 2:55 AM, 3:29 AM y 10:10 AM.
+ 
+Esto sugiere que los duplicados no representan crímenes distintos, sino **actualizaciones progresivas del mismo registro**, donde la hora del incidente fue refinada conforme avanzaba la investigación policial. El sistema optó por agregar un nuevo registro en lugar de sobreescribir el existente, generando así el historial de cambios.
+ 
+### Filas completamente idénticas
+ 
+De los 18 casos duplicados, 2 (`JJ460760` y `JK173315`) son filas completamente idénticas en todos sus atributos, incluyendo `date_occurrence`. Estos representan errores de carga y deben eliminarse.
+ 
+### Estrategia de limpieza
+ 
+Dado que el registro más reciente representa la versión más actualizada y precisa del incidente, la estrategia de limpieza será **conservar únicamente el último registro por `case_number`**, ordenando por `date_occurrence` de forma descendente. Esto aplica tanto para los duplicados con horas distintas como para las filas completamente idénticas.
