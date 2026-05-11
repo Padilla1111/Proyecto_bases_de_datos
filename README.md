@@ -104,6 +104,13 @@ psql -U postgres -d crimenes -c "SELECT COUNT(*) FROM rawc.crimes;"
 ```
 ## Análisis preliminar
 
+### Ejecución del proceso
+Para ejecutar el análisis preliminar, asegúrate de estar en la raíz del proyecto en tu terminal y ejecuta el siguiente comando:
+
+```bash
+psql -d crime_chicago -f exploration_queries/01_raw_data_exploration.sql
+```
+
 ## Descripción de Columnas y Valores Únicos
 
 Total de tuplas en la tabla: **232,588**
