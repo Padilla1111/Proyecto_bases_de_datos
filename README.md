@@ -381,16 +381,19 @@ Siguiendo los requerimientos del **Inciso C**, se implementaron las siguientes t
 * **Estandarización de Texto:** Uso de funciones `TRIM` y `UPPER` en columnas categóricas (`primary_description`, `location_description`, `block`) para eliminar espacios inconsistentes y normalizar la entrada de datos.
 * **Conversión de Tipos de Datos:**
     * **Temporales:** Transformación de `date_occurrence` (texto) a tipo `TIMESTAMP` mediante la máscara `MM/DD/YYYY HH12:MI:SS AM` para permitir análisis de series de tiempo.
-    * **Booleanos:** Traducción de los indicadores `Y/N` de las columnas `arrest` y `domestic` a tipo `BOOLEAN` nativo de PostgreSQL.
-    * **Numéricos:** Cast de `latitude`, `longitude` y coordenadas X/Y a `DOUBLE PRECISION`.
+    * **Booleanos:** Traducción de los indicadores `Y/N` de las columnas `arrest` y `domestic` a tipo `BOOLEAN` nativo de PostgreSQL, conservando como `NULL` aquellos valores que no correspondan a `Y` o `N`.
+    * **Numéricos:** Cast de `latitude` y `longitude` a `DOUBLE PRECISION`.
     * **Enteros:** Conversión de `ward` a `INTEGER` para permitir ordenamientos numéricos y análisis por distrito político-administrativo.
-* **Tratamiento de Valores Nulos:** Uso de `NULLIF(columna, '')` para asegurar que los strings vacíos sean tratados como nulos reales, evitando sesgos en cálculos estadísticos y funciones de agregación.
-* **Consolidación de Categorías:** Empleo de la extensión `fuzzystrmatch` (distancia de **Levenshtein**) y expresiones regulares para corregir errores de dedo y unificar categorías de ubicación (ej. unificar variantes de "STREET" o "SIDEWALK").
+* **Tratamiento de Valores Nulos:** Uso de `NULLIF(TRIM(columna), '')` para asegurar que los strings vacíos o con espacios sean tratados como nulos reales, evitando sesgos en cálculos estadísticos y funciones de agregación.
+* **Consolidación de Categorías:** Uso de expresiones regulares y reglas explícitas para normalizar categorías de ubicación. Se consolidan variantes relacionadas con "STREET" y "SIDEWALK" como categorías separadas para evitar mezclar tipos de ubicación distintos.
+* **Corrección de Errores de Captura:** Empleo de la extensión `fuzzystrmatch` (distancia de **Levenshtein**) para corregir errores menores de escritura en categorías delictivas (ej. HOMICID → HOMICIDE).
+* **Eliminación de Duplicados:** Uso de `SELECT DISTINCT` durante la carga inicial al esquema `cleaning` para evitar registros duplicados exactos provenientes de la tabla `raw`.
 * **Manejo de Outliers:** Agrupación bajo la categoría `OTHER (LOW FREQUENCY)` para descripciones de ubicación con menos de 5 registros, optimizando la claridad de futuras visualizaciones y reportes.
 
 ### 3. Justificación Técnica
 La estrategia de limpieza se diseñó bajo los siguientes pilares de Ingeniería de Datos:
 
 1. **Aislamiento de Datos (Staging):** Se utiliza el esquema `cleaning` para no alterar la tabla `raw`. Esto permite re-procesar los datos en cualquier momento sin necesidad de re-importar el CSV original de +200k registros.
-2. **Optimización Analítica:** La conversión a tipos de datos nativos (`TIMESTAMP`, `BOOLEAN`, `INTEGER`) reduce drásticamente el espacio en disco y habilita el uso de funciones avanzadas de extracción de tiempo (ej. identificar horas pico de incidencia delictiva).
-3. **Integridad y Calidad:** La normalización de texto y el manejo de nulos eliminan la fragmentación de datos, asegurando que un `GROUP BY` devuelva resultados precisos y no registros duplicados causados por errores de captura manual en el portal de datos.
+2. **Optimización Analítica:** La conversión a tipos de datos nativos (`TIMESTAMP`, `BOOLEAN`, `INTEGER` y `DOUBLE PRECISION`) reduce el espacio en disco y habilita el uso de funciones avanzadas de extracción de tiempo y análisis geográfico.
+3. **Integridad y Calidad:** La normalización de texto, la eliminación de duplicados y el manejo correcto de valores nulos reducen la fragmentación de datos, asegurando que un `GROUP BY` devuelva resultados precisos y consistentes.
+4. **Consistencia Semántica:** La consolidación controlada de categorías evita mezclar valores conceptualmente distintos, manteniendo coherencia en análisis posteriores y visualizaciones.
