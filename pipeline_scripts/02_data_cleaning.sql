@@ -1,6 +1,9 @@
 /*
-    Limpieza de Criminalidad Chicago
+    Limpieza de Criminalidad Chicago - Consolidado (Checklist EDA + Limpieza Avanzada)
 */
+
+-- Extensiones necesarias para funciones de similitud de texto
+CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;
 
 -- Idempotencia: refresh destructivo del esquema cleaning
 DROP SCHEMA IF EXISTS cleaning CASCADE;
@@ -26,7 +29,7 @@ CREATE TABLE cleaning.chicago_crimes (
     longitude DOUBLE PRECISION
 );
 
--- Uso de CTE  para numerar los registros duplicados
+-- Uso de CTE para numerar los registros duplicados y aplicar transformaciones
 WITH RankedCrimes AS (
     SELECT 
         TRIM(UPPER(case_number)) AS case_number,
@@ -92,3 +95,44 @@ SELECT
     longitude
 FROM RankedCrimes
 WHERE rn = 1;
+
+
+/*
+    Estandarización Avanzada y Consolidación de Categorías
+*/
+
+-- 1. Eliminar puntos o caracteres innecesarios en locaciones
+UPDATE cleaning.chicago_crimes
+SET location_description = REGEXP_REPLACE(location_description, '[.]', '', 'g');
+
+-- 2. Consolidar variantes relacionadas con STREET
+UPDATE cleaning.chicago_crimes
+SET location_description = 'STREET'
+WHERE location_description LIKE '%STREET%';
+
+-- 3. Consolidar variantes relacionadas con SIDEWALK
+UPDATE cleaning.chicago_crimes
+SET location_description = 'SIDEWALK'
+WHERE location_description LIKE '%SIDEWALK%';
+
+-- 4. Corrección controlada de posibles errores de dedo (Levenshtein)
+UPDATE cleaning.chicago_crimes
+SET primary_description = 'HOMICIDE'
+WHERE primary_description IS NOT NULL
+  AND LEVENSHTEIN('HOMICIDE', primary_description) BETWEEN 1 AND 2;
+
+-- 5. Agrupación de categorías poco frecuentes (Outliers de locación)
+WITH locations_with_5_or_more AS (
+    SELECT location_description
+    FROM cleaning.chicago_crimes
+    WHERE location_description IS NOT NULL
+    GROUP BY location_description
+    HAVING COUNT(*) >= 5
+)
+UPDATE cleaning.chicago_crimes
+SET location_description = 'OTHER (LOW FREQUENCY)'
+WHERE location_description NOT IN (
+    SELECT location_description
+    FROM locations_with_5_or_more
+)
+OR location_description IS NULL;
