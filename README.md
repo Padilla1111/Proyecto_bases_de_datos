@@ -366,7 +366,7 @@ Con 50 distritos, se listan los 10 con más incidencia:
 
 ## Actividad C: Limpieza de Datos
 
-El proceso de limpieza sigue una metodología de **refresh destructivo** mediante el esquema `cleaning`. Esto garantiza la **idempotencia** del proceso: cada ejecución genera desde cero el esquema y las tablas correspondientes, asegurando un estado consistente y libre de errores de ejecuciones previas.
+El proceso de limpieza sigue una metodología de **refresh destructivo** mediante el esquema `cleaning`. Esto garantiza la **idempotencia** del proceso: cada ejecución genera desde cero el esquema y las tablas correspondientes, asegurando un estado consistente y libre de errores de ejecuciones previas. El diseño responde directamente a los hallazgos del Análisis Exploratorio de Datos (EDA) preliminar.
 
 ### 1. Ejecución del proceso
 Para ejecutar la limpieza de datos, asegúrate de estar en la raíz del proyecto en tu terminal y ejecuta el siguiente comando:
@@ -376,24 +376,25 @@ psql -d crime_chicago -f pipeline_scripts/02_data_cleaning.sql
 ```
 
 ### 2. Actividades de Limpieza Realizadas
-Siguiendo los requerimientos del **Inciso C**, se implementaron las siguientes transformaciones técnicas basadas en el análisis de calidad del dataset:
+Siguiendo los requerimientos del **Inciso C** y la checklist del EDA, se implementaron las siguientes transformaciones técnicas:
 
-* **Estandarización de Texto:** Uso de funciones `TRIM` y `UPPER` en columnas categóricas (`primary_description`, `location_description`, `block`) para eliminar espacios inconsistentes y normalizar la entrada de datos.
+* **Eliminación de Duplicados Lógicos (Actualizaciones):** Se detectaron 18 expedientes con actualizaciones progresivas. Se implementó una *Window Function* (`ROW_NUMBER() OVER PARTITION BY case_number ORDER BY date_occurrence DESC`) para aislar y conservar únicamente la actualización más reciente de cada caso.
+* **Eliminación de Columna Redundante:** Se descartó la columna `location` de la tabla final, ya que su formato de tupla espacial era completamente derivable de `latitude` y `longitude`, evitando redundancia en el esquema.
 * **Conversión de Tipos de Datos:**
-    * **Temporales:** Transformación de `date_occurrence` (texto) a tipo `TIMESTAMP` mediante la máscara `MM/DD/YYYY HH12:MI:SS AM` para permitir análisis de series de tiempo.
-    * **Booleanos:** Traducción de los indicadores `Y/N` de las columnas `arrest` y `domestic` a tipo `BOOLEAN` nativo de PostgreSQL, conservando como `NULL` aquellos valores que no correspondan a `Y` o `N`.
-    * **Numéricos:** Cast de `latitude` y `longitude` a `DOUBLE PRECISION`.
-    * **Enteros:** Conversión de `ward` a `INTEGER` para permitir ordenamientos numéricos y análisis por distrito político-administrativo.
-* **Tratamiento de Valores Nulos:** Uso de `NULLIF(TRIM(columna), '')` para asegurar que los strings vacíos o con espacios sean tratados como nulos reales, evitando sesgos en cálculos estadísticos y funciones de agregación.
-* **Consolidación de Categorías:** Uso de expresiones regulares y reglas explícitas para normalizar categorías de ubicación. Se consolidan variantes relacionadas con "STREET" y "SIDEWALK" como categorías separadas para evitar mezclar tipos de ubicación distintos.
+    * **Temporales:** Transformación de `date_occurrence` (texto) a tipo `TIMESTAMP` mediante la máscara `MM/DD/YYYY HH12:MI:SS AM` para permitir operaciones como ordenamiento cronológico y filtros por rango.
+    * **Booleanos:** Traducción de los indicadores `Y/N` de las columnas `arrest` y `domestic` a tipo `BOOLEAN` nativo de PostgreSQL, para reflejar correctamente su naturaleza binaria.
+    * **Numéricos:** Cast de `x_coordinate`, `y_coordinate`, `latitude` y `longitude` a `DOUBLE PRECISION` (FLOAT).
+    * **Enteros:** Conversión de `ward` y `beat` a `INTEGER` para permitir ordenamientos y análisis espacial.
+* **Tratamiento de Valores Nulos:** Uso de `NULLIF(TRIM(columna), '')` para asegurar que los strings vacíos detectados en el EDA (ej. en `location_description`, coordenadas y `ward`) sean tratados como nulos reales, protegiendo las funciones de agregación.
+* **Estandarización de Texto:** Uso de funciones `TRIM` y `UPPER` en columnas categóricas (`primary_description`, `location_description`, `block`) para eliminar espacios inconsistentes.
+* **Consolidación de Categorías:** Uso de expresiones regulares y reglas explícitas para normalizar categorías de ubicación. Se consolidan variantes relacionadas con "STREET" y "SIDEWALK" como categorías separadas.
 * **Corrección de Errores de Captura:** Empleo de la extensión `fuzzystrmatch` (distancia de **Levenshtein**) para corregir errores menores de escritura en categorías delictivas (ej. HOMICID → HOMICIDE).
-* **Eliminación de Duplicados:** Uso de `SELECT DISTINCT` durante la carga inicial al esquema `cleaning` para evitar registros duplicados exactos provenientes de la tabla `raw`.
-* **Manejo de Outliers:** Agrupación bajo la categoría `OTHER (LOW FREQUENCY)` para descripciones de ubicación con menos de 5 registros, optimizando la claridad de futuras visualizaciones y reportes.
+* **Manejo de Outliers:** Agrupación bajo la categoría `OTHER (LOW FREQUENCY)` para descripciones de ubicación con menos de 5 registros, optimizando la claridad de futuras visualizaciones.
 
 ### 3. Justificación Técnica
 La estrategia de limpieza se diseñó bajo los siguientes pilares de Ingeniería de Datos:
 
 1. **Aislamiento de Datos (Staging):** Se utiliza el esquema `cleaning` para no alterar la tabla `raw`. Esto permite re-procesar los datos en cualquier momento sin necesidad de re-importar el CSV original de +200k registros.
-2. **Optimización Analítica:** La conversión a tipos de datos nativos (`TIMESTAMP`, `BOOLEAN`, `INTEGER` y `DOUBLE PRECISION`) reduce el espacio en disco y habilita el uso de funciones avanzadas de extracción de tiempo y análisis geográfico.
-3. **Integridad y Calidad:** La normalización de texto, la eliminación de duplicados y el manejo correcto de valores nulos reducen la fragmentación de datos, asegurando que un `GROUP BY` devuelva resultados precisos y consistentes.
-4. **Consistencia Semántica:** La consolidación controlada de categorías evita mezclar valores conceptualmente distintos, manteniendo coherencia en análisis posteriores y visualizaciones.
+2. **Decisiones Basadas en Datos (EDA-Driven):** La deduplicación no fue arbitraria; el uso de ventanas de tiempo resolvió el problema de actualización de expedientes policiales detectado en la fase exploratoria.
+3. **Optimización Analítica:** La conversión a tipos de datos nativos (`TIMESTAMP`, `BOOLEAN`, `INTEGER` y `DOUBLE PRECISION`) y la eliminación de columnas redundantes reducen significativamente el espacio en disco y aceleran el rendimiento de las consultas.
+4. **Integridad y Calidad:** La normalización de texto, el uso de distancias de edición y el manejo correcto de valores nulos garantizan que las agrupaciones (`GROUP BY`) devuelvan resultados analíticos precisos y consistentes.
