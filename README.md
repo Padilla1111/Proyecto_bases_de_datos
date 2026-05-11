@@ -355,3 +355,35 @@ Con 50 distritos, se listan los 10 con más incidencia:
 | 17 | 7,255 |
 | 16 | 7,085 |
 | 21 | 6,978 |
+
+
+## Actividad C: Limpieza de Datos
+
+El proceso de limpieza sigue una metodología de **refresh destructivo** mediante el esquema `cleaning`. Esto garantiza la **idempotencia** del proceso: cada ejecución genera desde cero el esquema y las tablas correspondientes, asegurando un estado consistente y libre de errores de ejecuciones previas.
+
+### 1. Ejecución del proceso
+Para ejecutar la limpieza de datos, asegúrate de estar en la raíz del proyecto en tu terminal y ejecuta el siguiente comando:
+
+```bash
+psql -d crime_chicago -f pipeline_scripts/02_data_cleaning.sql
+```
+
+### 2. Actividades de Limpieza Realizadas
+Siguiendo los requerimientos del **Inciso C**, se implementaron las siguientes transformaciones técnicas basadas en el análisis de calidad del dataset:
+
+* **Estandarización de Texto:** Uso de funciones `TRIM` y `UPPER` en columnas categóricas (`primary_description`, `location_description`, `block`) para eliminar espacios inconsistentes y normalizar la entrada de datos.
+* **Conversión de Tipos de Datos:**
+    * **Temporales:** Transformación de `date_occurrence` (texto) a tipo `TIMESTAMP` mediante la máscara `MM/DD/YYYY HH12:MI:SS AM` para permitir análisis de series de tiempo.
+    * **Booleanos:** Traducción de los indicadores `Y/N` de las columnas `arrest` y `domestic` a tipo `BOOLEAN` nativo de PostgreSQL.
+    * **Numéricos:** Cast de `latitude`, `longitude` y coordenadas X/Y a `DOUBLE PRECISION`.
+    * **Enteros:** Conversión de `ward` a `INTEGER` para permitir ordenamientos numéricos y análisis por distrito político-administrativo.
+* **Tratamiento de Valores Nulos:** Uso de `NULLIF(columna, '')` para asegurar que los strings vacíos sean tratados como nulos reales, evitando sesgos en cálculos estadísticos y funciones de agregación.
+* **Consolidación de Categorías:** Empleo de la extensión `fuzzystrmatch` (distancia de **Levenshtein**) y expresiones regulares para corregir errores de dedo y unificar categorías de ubicación (ej. unificar variantes de "STREET" o "SIDEWALK").
+* **Manejo de Outliers:** Agrupación bajo la categoría `OTHER (LOW FREQUENCY)` para descripciones de ubicación con menos de 5 registros, optimizando la claridad de futuras visualizaciones y reportes.
+
+### 3. Justificación Técnica
+La estrategia de limpieza se diseñó bajo los siguientes pilares de Ingeniería de Datos:
+
+1. **Aislamiento de Datos (Staging):** Se utiliza el esquema `cleaning` para no alterar la tabla `raw`. Esto permite re-procesar los datos en cualquier momento sin necesidad de re-importar el CSV original de +200k registros.
+2. **Optimización Analítica:** La conversión a tipos de datos nativos (`TIMESTAMP`, `BOOLEAN`, `INTEGER`) reduce drásticamente el espacio en disco y habilita el uso de funciones avanzadas de extracción de tiempo (ej. identificar horas pico de incidencia delictiva).
+3. **Integridad y Calidad:** La normalización de texto y el manejo de nulos eliminan la fragmentación de datos, asegurando que un `GROUP BY` devuelva resultados precisos y no registros duplicados causados por errores de captura manual en el portal de datos.
