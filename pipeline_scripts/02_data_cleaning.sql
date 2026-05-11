@@ -58,7 +58,7 @@ WITH RankedCrimes AS (
         CAST(NULLIF(TRIM(beat), '') AS INTEGER) AS beat,
         CAST(NULLIF(TRIM(ward), '') AS INTEGER) AS ward,
         
-        COALESCE(NULLIF(TRIM(UPPER(fbi_cd)), ''), 'UNKNOWN') AS fbi_cd,
+        TRIM(UPPER(fbi_cd)) AS fbi_cd,
         
         -- Puntos 2 y 5: Strings vacíos a NULL y cast a FLOAT (DOUBLE PRECISION)
         CAST(NULLIF(TRIM(x_coordinate), '') AS DOUBLE PRECISION) AS x_coordinate,
