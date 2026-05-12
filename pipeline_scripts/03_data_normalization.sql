@@ -22,6 +22,7 @@
 -- Análisis de Dependencias Funcionales y Multivaluadas
 -- =============================================================================
 --
+--
 -- La relación original (raw.chicago_crimes) contiene la siguiente clave:
 --
 --   Clave primaria candidata: { case_number }
