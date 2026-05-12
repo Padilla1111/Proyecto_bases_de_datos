@@ -1,5 +1,5 @@
 /*
-    Limpieza de Criminalidad Chicago - Consolidado (Checklist EDA + Limpieza Avanzada)
+    Limpieza de Criminalidad Chicago - Consolidado Definitivo
 */
 
 -- Extensiones necesarias para funciones de similitud de texto
@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;
 DROP SCHEMA IF EXISTS cleaning CASCADE;
 CREATE SCHEMA cleaning;
 
--- Creación de tabla limpia excluyendo la columna redundante 'location' (Punto 6)
+-- Creación de tabla limpia excluyendo la columna redundante 'location'
 CREATE TABLE cleaning.chicago_crimes (
     case_number TEXT,
     incident_timestamp TIMESTAMP,
@@ -34,18 +34,16 @@ WITH RankedCrimes AS (
     SELECT 
         TRIM(UPPER(case_number)) AS case_number,
         
-        -- Punto 3: Conversión de fecha a TIMESTAMP
-        TO_TIMESTAMP(date_occurrence, 'MM/DD/YYYY HH12:MI:SS AM') AS incident_timestamp,
+        -- CORRECCIÓN: Conversión flexible a TIMESTAMP en el SELECT
+        CAST(NULLIF(TRIM(date_occurrence), '') AS TIMESTAMP) AS incident_timestamp,
         
         TRIM(UPPER(block)) AS block,
         TRIM(iucr) AS iucr,
         TRIM(UPPER(primary_description)) AS primary_description,
         TRIM(UPPER(secondary_description)) AS secondary_description,
         
-        -- Punto 2: Convertir strings vacíos a NULL en location_description
         NULLIF(TRIM(location_description), '') AS location_description,
         
-        -- Punto 4: Convertir arrest y domestic a BOOLEAN
         CASE WHEN TRIM(UPPER(arrest)) = 'Y' THEN TRUE 
              WHEN TRIM(UPPER(arrest)) = 'N' THEN FALSE 
              ELSE NULL END AS arrest,
@@ -54,19 +52,17 @@ WITH RankedCrimes AS (
              WHEN TRIM(UPPER(domestic)) = 'N' THEN FALSE 
              ELSE NULL END AS domestic,
              
-        -- Punto 5: Conversiones numéricas a INTEGER
         CAST(NULLIF(TRIM(beat), '') AS INTEGER) AS beat,
         CAST(NULLIF(TRIM(ward), '') AS INTEGER) AS ward,
         
         TRIM(UPPER(fbi_cd)) AS fbi_cd,
         
-        -- Puntos 2 y 5: Strings vacíos a NULL y cast a FLOAT (DOUBLE PRECISION)
         CAST(NULLIF(TRIM(x_coordinate), '') AS DOUBLE PRECISION) AS x_coordinate,
         CAST(NULLIF(TRIM(y_coordinate), '') AS DOUBLE PRECISION) AS y_coordinate,
         CAST(NULLIF(TRIM(latitude), '') AS DOUBLE PRECISION) AS latitude,
         CAST(NULLIF(TRIM(longitude), '') AS DOUBLE PRECISION) AS longitude,
         
-        -- Punto 1: Ventana para identificar el registro más reciente por case_number
+        -- CORRECCIÓN: Conversión flexible a TIMESTAMP en la ventana
         ROW_NUMBER() OVER(
             PARTITION BY TRIM(UPPER(case_number)) 
             ORDER BY CAST(NULLIF(TRIM(date_occurrence), '') AS TIMESTAMP) DESC
@@ -74,36 +70,26 @@ WITH RankedCrimes AS (
     FROM raw.chicago_crimes
 )
 
--- Inserción final filtrando solo el registro más reciente (donde rn = 1)
+-- Inserción final filtrando solo el registro más reciente
 INSERT INTO cleaning.chicago_crimes
 SELECT 
-    case_number,
-    incident_timestamp,
-    block,
-    iucr,
-    primary_description,
-    secondary_description,
-    location_description,
-    arrest,
-    domestic,
-    beat,
-    ward,
-    fbi_cd,
-    x_coordinate,
-    y_coordinate,
-    latitude,
-    longitude
+    case_number, incident_timestamp, block, iucr, 
+    primary_description, secondary_description, location_description, 
+    arrest, domestic, beat, ward, fbi_cd, 
+    x_coordinate, y_coordinate, latitude, longitude
 FROM RankedCrimes
 WHERE rn = 1;
 
 
 /*
-    Estandarización Avanzada y Consolidación de Categorías
+    Estandarización Avanzada y Consolidación
 */
 
 -- 1. Eliminar puntos o caracteres innecesarios en locaciones
+-- CORRECCIÓN: Blindaje contra nulos para evitar errores en Regex
 UPDATE cleaning.chicago_crimes
-SET location_description = REGEXP_REPLACE(location_description, '[.]', '', 'g');
+SET location_description = REGEXP_REPLACE(location_description, '[.]', '', 'g')
+WHERE location_description IS NOT NULL;
 
 -- 2. Consolidar variantes relacionadas con STREET
 UPDATE cleaning.chicago_crimes
@@ -121,7 +107,15 @@ SET primary_description = 'HOMICIDE'
 WHERE primary_description IS NOT NULL
   AND LEVENSHTEIN('HOMICIDE', primary_description) BETWEEN 1 AND 2;
 
--- 5. Agrupación de categorías poco frecuentes (Outliers de locación)
+-- 5. CORRECCIÓN RECUPERADA: Imputación de códigos FBI faltantes basados en el mismo IUCR
+UPDATE cleaning.chicago_crimes AS c1
+SET fbi_cd = c2.fbi_cd
+FROM cleaning.chicago_crimes AS c2
+WHERE c1.iucr = c2.iucr 
+  AND c1.fbi_cd IS NULL 
+  AND c2.fbi_cd IS NOT NULL;
+
+-- 6. Agrupación de categorías poco frecuentes (Outliers de locación)
 WITH locations_with_5_or_more AS (
     SELECT location_description
     FROM cleaning.chicago_crimes
