@@ -398,3 +398,55 @@ La estrategia de limpieza se diseñó bajo los siguientes pilares de Ingeniería
 2. **Decisiones Basadas en Datos (EDA-Driven):** La deduplicación no fue arbitraria; el uso de ventanas de tiempo resolvió el problema de actualización de expedientes policiales detectado en la fase exploratoria.
 3. **Optimización Analítica:** La conversión a tipos de datos nativos (`TIMESTAMP`, `BOOLEAN`, `INTEGER` y `DOUBLE PRECISION`) y la eliminación de columnas redundantes reducen significativamente el espacio en disco y aceleran el rendimiento de las consultas.
 4. **Integridad y Calidad:** La normalización de texto, el uso de distancias de edición y el manejo correcto de valores nulos garantizan que las agrupaciones (`GROUP BY`) devuelvan resultados analíticos precisos y consistentes.
+
+## Actividad D: Normalización a Cuarta Forma Normal (4FN)
+
+El proceso de normalización sigue la misma metodología de **refresh destructivo** mediante el schema `normalization`, garantizando idempotencia. El diseño se basa en el análisis de dependencias funcionales y multivaluadas derivado del EDA preliminar y de los catálogos oficiales del Chicago Police Department.
+
+### 1. Ejecución del proceso
+
+Para ejecutar la normalización, asegúrate de estar en la raíz del proyecto y de contar con los archivos de referencia en la carpeta `normalizacion_proyecto_final/`:
+
+```bash
+psql -U [tuUsuario] -d crimenes -f pipeline_scripts/03_data_normalization.sql
+```
+
+### 2. Dependencias Funcionales Identificadas
+
+A partir del análisis del esquema raw, se identificaron las siguientes dependencias funcionales no triviales:
+
+| # | Dependencia | Justificación |
+|---|---|---|
+| (1) | `case_number → {todos los atributos}` | El número de caso es la clave del registro policial. |
+| (2) | `iucr → primary_description, secondary_description, index_code, active` | Los 332 códigos IUCR tienen descripciones predefinidas en el catálogo oficial de Illinois. |
+| (3) | `iucr → fbi_cd` | Dependencia transitiva: el código IUCR determina unívocamente la clasificación del FBI. |
+| (4) | `fbi_cd → description, index_status, crime_type` | Los 26 códigos UCR del FBI tienen clasificaciones fijas. |
+| (5) | `beat → district_id` | Los 274 beats de Chicago pertenecen cada uno a un único distrito policial. |
+| (6) | `district_id → district_name` | Los 22 distritos tienen nombres oficiales únicos. |
+| (7) | `ward_id → neighborhoods` | Los 50 wards de Chicago tienen colonias asociadas en el catálogo de la ciudad. |
+
+**Dependencias Multivaluadas:** No se identificaron MVDs independientes en el diseño. Cada incidente registra exactamente un valor de `iucr`, un `beat`, un `ward` y un tipo de ubicación, por lo que no existen hechos multivaluados independientes entre sí. Alcanzar 4FN en este dataset equivale a eliminar todas las dependencias transitivas y aislar cada tipo de hecho en su propia relvar.
+
+### 3. Relvars Resultantes
+
+La descomposición produce 7 tablas, cada una en 4FN:
+
+| Relvar | Clave Primaria | Clave Alterna | Hecho registrado |
+| :--- | :--- | :--- | :--- |
+| `normalization.district` | `district_id` | — | Nombre del distrito policial |
+| `normalization.beat` | `beat_id` | `beat` | Distrito al que pertenece el beat |
+| `normalization.ward` | `ward_id` | — | Colonias asociadas al ward |
+| `normalization.fbi_code` | `fbi_cd` | — | Clasificación UCR del FBI |
+| `normalization.iucr` | `iucr_id` | `iucr` | Descripción del código IUCR y su FBI_CD |
+| `normalization.location_type` | `location_type_id` | `location_description` | Tipo de lugar del incidente |
+| `normalization.incident` | `incident_id` | `case_number` | Hechos directos del incidente policial |
+
+### 4. Justificación Técnica
+
+La estrategia de normalización se diseñó bajo los siguientes criterios:
+
+1. **Eliminación de Redundancia por FDs Transitivas:** La cadena `case_number → iucr → fbi_cd → {description, ...}` violaba BCNF al almacenar las 26 descripciones del FBI repetidas en cada uno de los ~200,000 registros. Aislar `fbi_code` e `iucr` en sus propias relvars elimina esta redundancia.
+2. **Uso de Catálogos Oficiales:** Las tablas de referencia (`district`, `beat`, `ward`, `fbi_code`, `iucr`) se poblan desde los catálogos oficiales del Chicago Police Department, garantizando consistencia con la fuente original de los datos.
+3. **Llaves Surrogadas:** Se generan claves primarias subrogadas (`SERIAL`) en todas las tablas, tal como se anticipó en la nota del dataset original. Las claves naturales se preservan como claves alternas (`UNIQUE`).
+4. **Mapeo IUCR → FBI_CD basado en datos:** La dependencia transitiva `iucr → fbi_cd` se deriva directamente de los datos crudos (no del xlsx externo), ya que cada registro del dataset contiene ambos códigos. Esto evita inconsistencias entre el catálogo externo y los datos reales cargados.
+5. **Índices Post-Carga:** Los índices sobre las columnas de mayor uso analítico (`beat_id`, `ward_id`, `iucr_id`, `date_occurrence`, `arrest`) se crean al final del script para evitar el costo de reindexación incremental durante la inserción masiva.
