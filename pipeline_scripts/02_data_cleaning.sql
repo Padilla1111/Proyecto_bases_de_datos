@@ -69,7 +69,7 @@ WITH RankedCrimes AS (
         -- Punto 1: Ventana para identificar el registro más reciente por case_number
         ROW_NUMBER() OVER(
             PARTITION BY TRIM(UPPER(case_number)) 
-            ORDER BY TO_TIMESTAMP(date_occurrence, 'MM/DD/YYYY HH12:MI:SS AM') DESC
+            ORDER BY CAST(NULLIF(TRIM(date_occurrence), '') AS TIMESTAMP) DESC
         ) as rn
     FROM raw.chicago_crimes
 )
