@@ -113,17 +113,16 @@ ORDER BY total_incidents DESC;
 -- =============================================================================
 -- 5. Top 3 Beats por Distrito
 -- =============================================================================
--- ¿Cuáles son las 3 zonas de patrullaje (beat) con mayor cantidad de crímenes
--- dentro de cada distrito policial?
-
 \o 'results_csv/05_top3_beats_distrito.csv'
+
 WITH beats_clasificados AS (
     SELECT
-        SUBSTRING(LPAD(beat::TEXT, 4, '0'), 1, 2)::INTEGER AS distrito,
-        beat,
+        SUBSTRING(LPAD(b.beat::TEXT, 4, '0'), 1, 2)::INTEGER AS distrito,
+        b.beat,
         COUNT(*)                                            AS conteo
-    FROM raw.chicago_crimes
-    GROUP BY distrito, beat
+    FROM normalization.incident i
+    JOIN normalization.beat b ON i.beat_id = b.beat_id
+    GROUP BY distrito, b.beat
 ),
 ranking AS (
     SELECT
@@ -142,53 +141,44 @@ ORDER BY distrito, rank;
 -- =============================================================================
 -- 6. Evolución Mensual de Criminalidad
 -- =============================================================================
--- ¿Cómo evoluciona la criminalidad mes a mes? ¿Cuál fue el aumento o
--- disminución exacta de incidentes respecto al mes anterior?
-
 \o 'results_csv/06_evolucion_mensual.csv'
+
 WITH mensual AS (
     SELECT
-        TO_CHAR(
-            TO_TIMESTAMP(date_occurrence, 'MM/DD/YYYY HH12:MI:SS AM'),
-            'YYYY-MM'
-        )        AS mes,
+        TO_CHAR(date_occurrence, 'YYYY-MM') AS mes,
         COUNT(*) AS conteo
-    FROM raw.chicago_crimes
+    FROM normalization.incident
     GROUP BY mes
 )
 SELECT
     mes,
     conteo,
-    conteo - LAG(conteo) OVER (ORDER BY mes)              AS diferencia,
+    conteo - LAG(conteo) OVER (ORDER BY mes)               AS diferencia,
     ROUND(
         (conteo - LAG(conteo) OVER (ORDER BY mes))::NUMERIC
-        / LAG(conteo) OVER (ORDER BY mes) * 100,
+        / NULLIF(LAG(conteo) OVER (ORDER BY mes), 0) * 100,
     2)                                                     AS cambio_porcentual
 FROM mensual
+WHERE mes IS NOT NULL
 ORDER BY mes;
 
 
 -- =============================================================================
 -- 7. Porcentaje de Crímenes por Tipo de Ubicación
 -- =============================================================================
--- ¿Qué porcentaje del total histórico de crímenes aporta cada tipo de
--- ubicación al problema de inseguridad en la ciudad?
-
 \o 'results_csv/07_porcentaje_crimenes_ubicacion.csv'
+
 WITH total AS (
     SELECT COUNT(*) AS total_crimenes
-    FROM raw.chicago_crimes
-    WHERE location_description IS NOT NULL
-      AND location_description != ''
+    FROM normalization.incident
 )
 SELECT
-    location_description,
-    COUNT(*)                                                   AS conteo,
+    lt.location_description,
+    COUNT(*)                                                        AS conteo,
     ROUND(COUNT(*) * 100.0 / (SELECT total_crimenes FROM total), 2) AS porcentaje
-FROM raw.chicago_crimes
-WHERE location_description IS NOT NULL
-  AND location_description != ''
-GROUP BY location_description
+FROM normalization.incident i
+JOIN normalization.location_type lt ON i.location_type_id = lt.location_type_id
+GROUP BY lt.location_description
 ORDER BY conteo DESC;
 
 
