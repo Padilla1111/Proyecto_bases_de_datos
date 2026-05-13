@@ -75,7 +75,7 @@ Link: https://data.cityofchicago.org/Public-Safety/Crimes-One-year-prior-to-pres
 - Registros totales: ~232,600 (muestra de trabajo: 232,593 después de limpieza)
 - Requisito cumplido: >5,000 tuplas
 
-### ⚙️ Configuración para Replicación
+###  Configuración para Replicación
 
 1. Crea una carpeta `data/` en la raíz del proyecto
 2. Descarga `raw_data.csv` desde el Chicago Data Portal
@@ -85,10 +85,10 @@ Link: https://data.cityofchicago.org/Public-Safety/Crimes-One-year-prior-to-pres
 
 ```bash
 # Desde la raíz del proyecto:
-psql -U postgres -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
-psql -U postgres -d crimenes -f pipeline_scripts/02_data_cleaning.sql
-psql -U postgres -d crimenes -f pipeline_scripts/03_data_normalization.sql
-psql -U postgres -d crimenes -f exploration_queries/02_analytical_queries.sql
+psql -U tuUsuario -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
+psql -U tuUsuario -d crimenes -f pipeline_scripts/02_data_cleaning.sql
+psql -U tuUsuario -d crimenes -f pipeline_scripts/03_data_normalization.sql
+psql -U tuUsuario -d crimenes -f exploration_queries/02_analytical_queries.sql
 ```
 
 ## Estructura del Repositorio
@@ -119,7 +119,7 @@ psql -U postgres -d crimenes -f exploration_queries/02_analytical_queries.sql
 
 **Ejecución:**
 ```bash
-psql -U postgres -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
+psql -U tuUsuario -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
 ```
 
 **Resultado:**
@@ -229,7 +229,7 @@ normalization.incident        (incident_id SERIAL PK, case_number VARCHAR UNIQUE
 
 **Ejecución:**
 ```bash
-psql -U postgres -d crimenes -f pipeline_scripts/03_data_normalization.sql
+psql -U tuUsuario -d crimenes -f pipeline_scripts/03_data_normalization.sql
 ```
 
 **Verificación de integridad:**
@@ -338,7 +338,7 @@ month_over_month_delta = total_incidents - LAG(total_incidents) OVER (...)
 ## Ejecución de Queries
 
 ```bash
-psql -U postgres -d crimenes -f exploration_queries/02_analytical_queries.sql
+psql -U tuUsuario -d crimenes -f exploration_queries/02_analytical_queries.sql
 ```
 
 Salida esperada: 4 tablas con resultados analíticos listos para visualización/reporte.
@@ -366,10 +366,10 @@ Salida esperada: 4 tablas con resultados analíticos listos para visualización/
 ## Reproducibilidad
 
 El pipeline es 100% reproducible y autocontenido:
-- ✅ Solo requiere `raw_data.csv` (descargable del Chicago Data Portal)
-- ✅ Todos los catálogos se derivan del cleaning con `SELECT DISTINCT`
-- ✅ Sin archivos externos, sin hardcoding
-- ✅ Scripts idempotentes (refresh destructivo, DROP CASCADE)
+- Solo requiere `raw_data.csv` (descargable del Chicago Data Portal)
+- Todos los catálogos se derivan del cleaning con `SELECT DISTINCT`
+- Sin archivos externos, sin hardcoding
+- Scripts idempotentes (refresh destructivo, DROP CASCADE)
 
 ## Limitaciones Éticas Reconocidas
 
@@ -389,10 +389,3 @@ El pipeline es 100% reproducible y autocontenido:
 - `idx_incident_loc_type` en `location_type_id`
 - `idx_incident_date` en `date_occurrence`
 - `idx_incident_arrest` en `arrest` (para filtros de tasa de arresto)
-
-Queries analíticas ejecutan <1 segundo en dataset completo (232k rows).
-
----
-
-**Última actualización:** Abril 2026  
-**Estado del proyecto:** ✅ Completado — Todas las actividades (A-E) implementadas
