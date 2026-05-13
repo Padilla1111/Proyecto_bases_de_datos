@@ -348,20 +348,20 @@ Con 274 valores distintos, se listan los 10 beats con más incidencia:
 
 ### `ward`
 
-Con 50 distritos, se listan los 10 con más incidencia:
+Con 50 vecindarios, se listan los 10 con más incidencia:
 
 | Ward | Conteo |
 |---|---|
-| 27 | 11,154 |
-| 28 | 10,368 |
-| 42 | 8,715 |
-| 6 | 8,707 |
-| 24 | 7,989 |
-| 20 | 7,952 |
-| 4 | 7,892 |
-| 17 | 7,255 |
-| 16 | 7,085 |
-| 21 | 6,978 |
+| 27 (Near West Side, West Town) | 11,154 |
+| 28 (West Garfield Park, Austin) | 10,368 |
+| 42 (Loop, Streeterville) | 8,715 |
+| 6 (Chatham, Greater Grand Crossing) | 8,707 |
+| 24 (North Lawndale) | 7,989 |
+| 20 (Woodlawn, Washington Park) | 7,952 |
+| 4 (Kenwood, Oakland) | 7,892 |
+| 17 (West Englewood, Chicago Lawn) | 7,255 |
+| 16 (Englewood, West Englewood) | 7,085 |
+| 21 (Auburn Gresham, Washington Heights) | 6,978 |
 
 
 ## Actividad C: Limpieza de Datos
