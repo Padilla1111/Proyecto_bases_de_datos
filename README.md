@@ -85,10 +85,10 @@ Link: https://data.cityofchicago.org/Public-Safety/Crimes-One-year-prior-to-pres
 
 ```bash
 # Desde la raíz del proyecto:
-psql -U postgres -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
-psql -U postgres -d crimenes -f pipeline_scripts/02_data_cleaning.sql
-psql -U postgres -d crimenes -f pipeline_scripts/03_data_normalization.sql
-psql -U postgres -d crimenes -f exploration_queries/02_analytical_queries.sql
+psql -U tuUsuario -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
+psql -U tuUsuario -d crimenes -f pipeline_scripts/02_data_cleaning.sql
+psql -U tuUsuario -d crimenes -f pipeline_scripts/03_data_normalization.sql
+psql -U tuUsuario -d crimenes -f exploration_queries/02_analytical_queries.sql
 ```
 
 ## Estructura del Repositorio
@@ -119,7 +119,7 @@ psql -U postgres -d crimenes -f exploration_queries/02_analytical_queries.sql
 
 **Ejecución:**
 ```bash
-psql -U postgres -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
+psql -U tuUsuario -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
 ```
 
 **Resultado:**
@@ -229,7 +229,7 @@ normalization.incident        (incident_id SERIAL PK, case_number VARCHAR UNIQUE
 
 **Ejecución:**
 ```bash
-psql -U postgres -d crimenes -f pipeline_scripts/03_data_normalization.sql
+psql -U tuUsuario -d crimenes -f pipeline_scripts/03_data_normalization.sql
 ```
 
 **Verificación de integridad:**
@@ -338,7 +338,7 @@ month_over_month_delta = total_incidents - LAG(total_incidents) OVER (...)
 ## Ejecución de Queries
 
 ```bash
-psql -U postgres -d crimenes -f exploration_queries/02_analytical_queries.sql
+psql -U tuUsuario -d crimenes -f exploration_queries/02_analytical_queries.sql
 ```
 
 Salida esperada: 4 tablas con resultados analíticos listos para visualización/reporte.
