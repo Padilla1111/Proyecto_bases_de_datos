@@ -135,9 +135,10 @@ Total de tuplas en la tabla: **232,588**
 | `longitude` | 112,596 | Coordenada geográfica en el sistema WGS84. Alta cardinalidad esperada dado que representa posiciones precisas. Tipo de dato `FLOAT`. |
 | `location` | 112,624 | Campo compuesto que combina latitud y longitud en formato `(lat, long)`. Redundante con las columnas `latitude` y `longitude`. |
 
+
 ## Rango Temporal
 
-El campo `date_occurrence` está almacenado en formato `MM/DD/YYYY HH:MI:SS AM/PM` y cubre exactamente un año de registros:
+El campo `date_occurrence` está almacenado originalmente en formato `MM/DD/YYYY HH:MI:SS AM/PM`. Al convertirlo a `TIMESTAMP` mediante `TO_TIMESTAMP`, Postgres lo representa en formato `YYYY-MM-DD HH:MM:SS`. El dataset cubre exactamente un año de registros:
 
 | | Valor |
 |---|---|
