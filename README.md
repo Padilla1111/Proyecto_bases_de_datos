@@ -769,10 +769,46 @@ El pipeline es 100% reproducible y autocontenido:
 
 ## Conclusiones
 
-Chicago no es una ciudad uniformemente peligrosa. Es una ciudad con patrones. La criminalidad no se distribuye al azar: tiene estaciones, tiene geografías y afecta desproporcionadamente los espacios donde la gente vive y transita en su día a día. El análisis deja claro que los crímenes siguen ciclos predecibles, se concentran en zonas específicas y golpean sobre todo en la calle y en el hogar, que son precisamente los lugares donde uno menos debería tener que cuidarse.
+### El crimen en Chicago muestra un patrón con tres dimensiones claras: temporal, geográfica y de selectividad en su persecución.
 
-Quizás el hallazgo más revelador no es dónde o cuándo ocurren los crímenes, sino cuáles se resuelven. La baja tasa de arresto en los delitos de mayor volumen como el robo o la batería contrasta con la alta efectividad en infracciones regulatorias. Esto sugiere que el sistema policial está más orientado a la ejecución de normas específicas que a la protección frente a los delitos que más impactan a la gente común. El crimen que más se sufre es, paradójicamente, el que menos consecuencias tiene para quien lo comete.
+Chicago registró **232,593 incidentes en un año** (abril 2025–abril 2026), pero solo generó **15.5% de arrestos**. 
 
-Lo que más llama la atención es que la tasa de arresto se mantiene prácticamente igual a lo largo de todo el año, incluso cuando los incidentes aumentan casi un 40% en verano. El sistema no se adapta al pico de demanda, simplemente lo absorbe con la misma eficiencia de siempre. Eso, más que cualquier número, define el verdadero reto de seguridad pública en Chicago.
+### Temporalidad: un sistema que no escala
 
-Estos hallazgos iluminan un problema real y actual de seguridad pública en Chicago. Reconocer un problema es siempre el primer paso para resolverlo, y lo que los datos revelan es exactamente eso: un punto de partida concreto hacia una ciudad más segura. Vale la pena destacar que esta metodología es completamente replicable en cualquier conjunto de datos de cualquier ciudad o país. Con el enfoque correcto y la voluntad de mirar los números de frente, estamos un paso más cerca de construir comunidades más seguras para todos.
+La criminalidad no es estable. Marzo 2025 registró un **aumento del 15% respecto a abril**, y julio se consolidó como el mes pico con **22,643 incidentes**. Sin embargo, la tasa de arresto se mantuvo prácticamente idéntica (~15% todo el año). El sistema no se adapta ante picos de demanda; simplemente absorbe el volumen con eficiencia constante. Esto podría revelar prioridades estáticas, sin la voluntad o la capacidad de adaptarse.
+
+### Geografía concentrada: la calle es el crimen de Chicago
+
+El 27.1% de todos los delitos ocurren en la calle (**62.8k casos**). Si sumamos apartamentos y espacios públicos (acera, callejón), llegamos al **80.5% del total**. Son los lugares donde vive la gente. Los wards 27 y 28 superan 1,000 incidentes mensuales en verano, mientras que ward 50 mantiene una estabilidad de 1.60 mensuales. La brecha es abismal: algunos distritos viven bajo presión constante mientras otros son prácticamente completamente seguros.
+
+### La dicotomía letal: lo que se detiene vs. lo que se tolera
+
+Este es el hallazgo más grave:
+- **CONCEALED CARRY**: 97.27% de tasa de arresto (220 casos)
+- **NARCOTICS**: 94.02% de tasa de arresto (7k casos)
+- **THEFT**: 22.8% de tasa de arresto (53,079 casos — el delito más frecuente)
+
+El crimen regulatorio se persigue implacablemente. El crimen que afecta directamente a la gente (robo, asalto, batería) apenas genera consecuencias. Los 53,079 robos generaron apenas ~12k arrestos. Para una persona que vive en Chicago, esto significa que el acto más probable de violencia o pérdida que sufra tiene menos del 25% de probabilidades de resultar en un arresto.
+
+### El ritmo semanal: cuando baja la guardia
+
+Domingo registra la tasa de arresto más alta (**16.04%**), pero es también cuando ocurren menos crímenes. Lunes, en cambio, concentra **33,283 incidentes** con solo **15.09% de arrestos**. La tarde (12–17h, 31.4% del volumen) y la noche (18–23h, 28.1%) concentran el crimen, pero es precisamente en la noche cuando la tasa de arresto sube (**18.21% vs. 15.63% en tarde**). El patrullaje nocturno es más efectivo, pero insuficiente para el volumen diurno.
+
+### Criminalidad doméstica: el crimen invisible
+
+Aunque representan solo el 19.12% del total (44,465 casos), los crímenes domésticos tienen una tasa de arresto ligeramente superior (16.25% vs. 15.09% en no domésticos). Esto podría interpretarse como una respuesta mejor cuando hay una víctima identificable, pero en números absolutos, son 44,465 casos donde la violencia ocurre en el hogar con apenas ~7.2k arrestos.
+
+### Conclusión final: un problema de decisión.
+
+Chicago no tiene un problema de crimen aleatorio e impredecible. Tiene un problema de **decisiones estructurales** sobre qué criminalidad se persigue. La baja tasa global (15.5%) oculta tasas de 90%+ para ciertos delitos y 22% para otros. El sistema es selectivo, no incapacitado.
+
+Los datos muestran que:
+1. **El crimen sigue patrones predecibles**: estaciones, geografías, horarios
+2. **La respuesta es inconsistente**: unos crímenes se persiguen casi siempre, otros casi nunca
+3. **La capacidad existe**: la persecución nocturna alcanza 18.21% de eficiencia
+
+La pregunta que quedan los datos no es "*¿Por qué no podemos detener el crimen?*" sino "*¿Por qué elegimos no perseguir el crimen que más afecta a la gente?*"
+
+---
+
+**Nota metodológica**: Este análisis demuestra que la seguridad pública es medible, reproducible y basada en datos. La misma metodología —10 queries analíticas sobre un conjunto estructurado de registros policiados— puede aplicarse a cualquier ciudad, cualquier período, cualquier conjunto de datos de incidentes. La voluntad política de mirar los números de frente es lo que ha faltado hasta ahora.
