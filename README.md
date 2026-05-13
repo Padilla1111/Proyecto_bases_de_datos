@@ -119,6 +119,12 @@ psql -U tuUsuario -d crimenes -f exploration_queries/02_analytical_queries.sql
     └── index.html
 ```
 
+### Dashboard interactivo
+
+El repositorio incluye una interfaz web estática en la raíz ([`index.html`](index.html)) construida con **React 18** y **Recharts**. Los gráficos y tablas reflejan los mismos hallazgos que exportan los CSV en [`results_csv/`](results_csv/), incluidas todas las consultas. 
+
+Para facilitar el acceso, el dashboard ha sido publicado con **GitHub Pages** desde la rama `main`. Puedes visualizarlo en este URL: [https://padilla1111.github.io/Proyecto_bases_de_datos/](https://padilla1111.github.io/Proyecto_bases_de_datos/).
+
 ---
 
 # Procesamiento de Datos

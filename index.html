@@ -69,6 +69,32 @@
       margin-bottom: 14px;
     }
 
+    .mono {
+      font-family: 'ui-monospace', Menlo, Consolas, monospace;
+    }
+    .mono-sm {
+      font-family: 'ui-monospace', Menlo, Consolas, monospace;
+      font-size: 11px;
+    }
+
+    .hotspot-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .hotspot-table th {
+      text-align: left;
+      color: #8b949e;
+      padding: 6px 8px;
+      border-bottom: 1px solid #21262d;
+      font-weight: 600;
+    }
+    .hotspot-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid #21262d;
+      vertical-align: middle;
+    }
+
     /* Insight box */
     .insight {
       margin-top: 12px;
@@ -240,8 +266,7 @@
       { name: "INTIMIDATION",        rate:  0.56, total:   180 },
     ];
 
-    // Q3 · Evoluci\u00f3n por Ward (LAG)
-    const WARD_COLORS = { W27:"#E63946", W28:"#F4A261", W42:"#A8DADC", W6:"#457B9D", W3:"#2A9D8F", W50:"#8D99AE" };
+    // Q8 · Día de la semana (results_csv/08_criminalidad_dia_semana.csv)
     const WEEKDAYS = [
       { day: "Lun", incidents: 33283, arrest_rate: 15.09 },
       { day: "Mar", incidents: 32624, arrest_rate: 15.40 },
@@ -251,12 +276,15 @@
       { day: "Sáb", incidents: 33521, arrest_rate: 15.15 },
       { day: "Dom", incidents: 32588, arrest_rate: 16.04 }
     ];
+    const WEEKDAY_INC_MAX = Math.max(...WEEKDAYS.map(d => d.incidents));
 
+    // Q9 · Doméstico vs no doméstico (results_csv/09_comparativa_domesticos.csv)
     const DOMESTIC = [
       { name: "No Doméstico", value: 188128, rate: 15.09, color: "#1f6feb", pct: 80.88 },
       { name: "Doméstico", value: 44465, rate: 16.25, color: "#d29922", pct: 19.12 }
     ];
 
+    // Q10 · Hotspots por cuadra (results_csv/10_top20_hotspots_bloques.csv)
     const HOTSPOTS = [
       { block: "0000X W TERMINAL ST", incidents: 552, rate: 30.98 },
       { block: "001XX N STATE ST", incidents: 515, rate: 40.19 },
@@ -267,8 +295,21 @@
       { block: "076XX S CICERO AVE", incidents: 323, rate: 19.81 },
       { block: "044XX N BROADWAY", incidents: 283, rate: 49.47 },
       { block: "0000X E GRAND AVE", incidents: 282, rate: 31.91 },
-      { block: "026XX N ELSTON AVE", incidents: 255, rate: 68.63 }
+      { block: "026XX N ELSTON AVE", incidents: 255, rate: 68.63 },
+      { block: "006XX N CLARK ST", incidents: 249, rate: 48.19 },
+      { block: "011XX W JACKSON BLVD", incidents: 245, rate: 46.12 },
+      { block: "057XX S CICERO AVE", incidents: 245, rate: 37.55 },
+      { block: "032XX N CLARK ST", incidents: 237, rate: 15.19 },
+      { block: "011XX S CLARK ST", incidents: 224, rate: 70.98 },
+      { block: "005XX N STATE ST", incidents: 217, rate: 45.62 },
+      { block: "011XX S CANAL ST", incidents: 217, rate: 20.74 },
+      { block: "004XX N MICHIGAN AVE", incidents: 216, rate: 15.74 },
+      { block: "065XX S DR MARTIN LUTHER KING JR DR", incidents: 214, rate: 32.71 },
+      { block: "002XX E HURON ST", incidents: 207, rate: 23.19 }
     ];
+
+    // Q3 · Evoluci\u00f3n por Ward (LAG)
+    const WARD_COLORS = { W27:"#E63946", W28:"#F4A261", W42:"#A8DADC", W6:"#457B9D", W3:"#2A9D8F", W50:"#8D99AE" };
     const Q3_MONTHS = ["Abr'25","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic","Ene'26","Feb","Mar","Abr'26"];
     const Q3_RAW = {
       W6:  [ 87, 792, 787, 897, 777, 711, 775, 692, 684, 660, 581, 678, 572],
@@ -418,7 +459,7 @@
 
             {/* Q1 · Tendencia Mensual */}
             <div className="card">
-              <div className="card-title">&#9312;&nbsp; Tendencia Mensual</div>
+              <div className="card-title">01 &middot; Tendencia Mensual</div>
               <div className="card-sub">Incidentes por mes (barras) + tasa de arresto % (l&iacute;nea)</div>
               <ResponsiveContainer width="100%" height={240}>
                 <ComposedChart data={Q1} margin={{ top:4, right:44, bottom:0, left:0 }}>
@@ -446,7 +487,7 @@
 
             {/* Q4 · Distribuci\u00f3n Horaria */}
             <div className="card">
-              <div className="card-title">&#9315;&nbsp; Distribuci&oacute;n por Franja Horaria</div>
+              <div className="card-title">04 &middot; Distribuci&oacute;n por Franja Horaria</div>
               <div className="card-sub">Volumen relativo y tasa de arresto por per&iacute;odo del d&iacute;a</div>
               <div style={{ display:"flex", flexDirection:"column", gap:16, marginTop:8 }}>
                 {Q4.map(h => (
@@ -476,7 +517,7 @@
 
           {/* Q6 · Evoluci\u00f3n Mensual */}
           <div className="card" style={{ marginBottom:16 }}>
-            <div className="card-title">&#9318;&nbsp; Evoluci&oacute;n Mensual &#8212; Cambio Mes a Mes</div>
+            <div className="card-title">06 &middot; Evoluci&oacute;n Mensual &#8212; Cambio Mes a Mes</div>
             <div className="card-sub">Volumen (barras) + variaci&oacute;n porcentual respecto al mes anterior (l&iacute;nea)</div>
             <ResponsiveContainer width="100%" height={220}>
               <ComposedChart data={Q6} margin={{ top:4, right:48, bottom:0, left:0 }}>
@@ -514,7 +555,7 @@
 
             {/* Q2 · Tasa Arresto por Tipo */}
             <div className="card">
-              <div className="card-title">&#9313;&nbsp; Tasa de Arresto por Tipo de Crimen</div>
+              <div className="card-title">02 &middot; Tasa de Arresto por Tipo de Crimen</div>
               <div className="card-sub">Solo tipos con &gt;100 incidentes &middot; ordenado por tasa descendente</div>
               <div style={{ display:"flex", gap:8, marginBottom:10, flexWrap:"wrap" }}>
                 {[["#2ea043","\u226570%"],["#d29922","30\u201370%"],["#f4a261","10\u201330%"],["#f85149","<10%"]].map(([c,l])=>(
@@ -548,7 +589,7 @@
 
             {/* Q3 · Ward Evolution */}
             <div className="card">
-              <div className="card-title">&#9314;&nbsp; Evoluci&oacute;n Mensual por Ward</div>
+              <div className="card-title">03 &middot; Evoluci&oacute;n Mensual por Ward</div>
               <div className="card-sub">Window function LAG() &mdash; selecciona wards para comparar</div>
               <div style={{ display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" }}>
                 {Object.entries(WARD_COLORS).map(([w, c]) => (
@@ -593,7 +634,7 @@
 
             {/* Q5 · Beats por Distrito */}
             <div className="card">
-              <div className="card-title">&#9316;&nbsp; Top 3 Beats por Distrito</div>
+              <div className="card-title">05 &middot; Top 3 Beats por Distrito</div>
               <div className="card-sub">Zonas de patrullaje con m&aacute;s incidentes &middot; ROW_NUMBER() OVER (PARTITION BY distrito)</div>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
                 <span style={{ fontSize:11, color:"#8b949e", flexShrink:0 }}>Distrito:</span>
@@ -638,7 +679,7 @@
 
             {/* Q7 · Ubicaciones */}
             <div className="card">
-              <div className="card-title">&#9319;&nbsp; Cr&iacute;menes por Tipo de Ubicaci&oacute;n</div>
+              <div className="card-title">07 &middot; Cr&iacute;menes por Tipo de Ubicaci&oacute;n</div>
               <div className="card-sub">Top 10 ubicaciones &middot; porcentaje del total hist&oacute;rico</div>
               <div className="grid-3" style={{ gap:8 }}>
                 {Q7.map((u, i) => {
@@ -659,10 +700,104 @@
             </div>
           </div>
 
+          {/* ─── Fila 3 · Ritmo semanal y focos (Q8–Q10) ─── */}
+          <div className="section-header">
+            <span className="section-tag">Ritmo semanal y focos</span>
+            <div className="section-line" />
+          </div>
+
+          <div className="grid-3" style={{ marginBottom:16 }}>
+
+            <div className="card">
+              <div className="card-title">08 &middot; Incidencia por d&iacute;a de la semana</div>
+              <div className="card-sub">Volumen vs tasa de arresto &middot; <code className="mono-sm">normalization.incident</code> &middot; CSV 08</div>
+              <ResponsiveContainer width="100%" height={240}>
+                <ComposedChart data={WEEKDAYS} margin={{ top:4, right:44, bottom:0, left:0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
+                  <XAxis dataKey="day" tick={{ fill:"#8b949e", fontSize:11 }} axisLine={false} tickLine={false} />
+                  <YAxis yAxisId="L" tick={{ fill:"#8b949e", fontSize:11 }} axisLine={false} tickLine={false}
+                    tickFormatter={fmt} domain={[32000, 35200]} />
+                  <YAxis yAxisId="R" orientation="right" tick={{ fill:"#2ea043", fontSize:11 }}
+                    axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`} domain={[14, 17]} />
+                  <Tooltip content={<Tooltip_ />} />
+                  <Bar yAxisId="L" dataKey="incidents" name="Incidentes" radius={[4,4,0,0]}>
+                    {WEEKDAYS.map((d, i) => {
+                      const t = d.incidents / WEEKDAY_INC_MAX;
+                      const fill = t >= 0.95 ? "#f85149" : t >= 0.9 ? "#d29922" : "#1f6feb";
+                      return <Cell key={i} fill={fill} />;
+                    })}
+                  </Bar>
+                  <Line yAxisId="R" type="monotone" dataKey="arrest_rate" name="Tasa arresto %"
+                    stroke="#2ea043" strokeWidth={2} dot={{ r:3, fill:"#2ea043" }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+              <div className="insight">
+                El fin de semana mantiene volumen alto; <strong style={{ color:"#2ea043" }}>domingo</strong> muestra la tasa de arresto m&aacute;s elevada (<span className="mono">16.04%</span>).
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-title">09 &middot; Cr&iacute;menes dom&eacute;sticos vs no dom&eacute;sticos</div>
+              <div className="card-sub">Proporci&oacute;n del total y tasa de arresto por categor&iacute;a &middot; CSV 09</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:16, marginTop:8 }}>
+                {DOMESTIC.map(row => (
+                  <div key={row.name}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5, fontSize:12 }}>
+                      <span style={{ color:"#e6edf3" }}>{row.name}</span>
+                      <div style={{ display:"flex", gap:12 }} className="mono-sm">
+                        <span style={{ color:"#6e7681" }}>{fmtN(row.value)}</span>
+                        <span style={{ color: rateColor(row.rate), fontWeight:700, minWidth:54, textAlign:"right" }}>
+                          {row.rate}% arr.
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bar-track">
+                      <div className="bar-fill" style={{ width:`${row.pct}%`, background: row.color }} />
+                    </div>
+                    <span style={{ fontSize:10, color:"#484f58" }} className="mono">{row.pct.toFixed(2)}% del total</span>
+                  </div>
+                ))}
+              </div>
+              <div className="insight">
+                ~<span className="mono">19%</span> de los incidentes se clasifican como dom&eacute;sticos; su tasa de arresto es algo mayor que la del resto.
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-title">10 &middot; Top hotspots por cuadra (<span className="mono">block</span>)</div>
+              <div className="card-sub">Top 20 por volumen &middot; CSV 10 &middot; umbral SQL <span className="mono">HAVING COUNT(*) &gt; 20</span></div>
+              <div style={{ maxHeight:280, overflowY:"auto" }}>
+                <table className="hotspot-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Cuadra</th>
+                      <th style={{ textAlign:"right" }}>Inc.</th>
+                      <th style={{ textAlign:"right" }}>% arr.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {HOTSPOTS.map((h, i) => (
+                      <tr key={h.block}>
+                        <td className="mono-sm" style={{ color:"#484f58" }}>{i + 1}</td>
+                        <td style={{ color:"#e6edf3", fontSize:10 }}>{h.block}</td>
+                        <td className="mono-sm" style={{ textAlign:"right", color:"#58a6ff" }}>{fmtN(h.incidents)}</td>
+                        <td className="mono-sm" style={{ textAlign:"right", color: rateColor(h.rate), fontWeight:600 }}>{h.rate}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="insight">
+                Nodos de transporte y corredores comerciales del <strong style={{ color:"#58a6ff" }}>Loop</strong> concentran reincidencia por cuadra anonimizada.
+              </div>
+            </div>
+          </div>
+
           {/* FOOTER */}
           <div className="footer">
             Proyecto Final BD COM-12101-2 &middot;
-            7 queries anal&iacute;ticas &middot;
+            10 queries anal&iacute;ticas &middot;
             Window functions: RANK, LAG, ROW_NUMBER &middot;
             232,593 registros &middot;
             Normalizado 4FN &middot;
