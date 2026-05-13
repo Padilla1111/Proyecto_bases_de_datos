@@ -101,3 +101,78 @@ SELECT
 FROM normalization.incident i
 GROUP BY time_period
 ORDER BY total_incidents DESC;
+
+-- =============================================================================
+-- 5. Top 3 Beats por Distrito
+-- =============================================================================
+-- ¿Cuáles son las 3 zonas de patrullaje (beat) con mayor cantidad de crímenes
+-- dentro de cada distrito policial?
+WITH beats_clasificados AS (
+    SELECT
+        SUBSTRING(LPAD(beat::TEXT, 4, '0'), 1, 2)::INTEGER AS distrito,
+        beat,
+        COUNT(*)                                            AS conteo
+    FROM raw.chicago_crimes
+    GROUP BY distrito, beat
+),
+ranking AS (
+    SELECT
+        distrito,
+        beat,
+        conteo,
+        ROW_NUMBER() OVER (PARTITION BY distrito ORDER BY conteo DESC) AS rank
+    FROM beats_clasificados
+)
+SELECT distrito, beat, conteo
+FROM ranking
+WHERE rank <= 3
+ORDER BY distrito, rank;
+
+
+-- =============================================================================
+-- 6. Evolución Mensual de Criminalidad
+-- =============================================================================
+-- ¿Cómo evoluciona la criminalidad mes a mes? ¿Cuál fue el aumento o
+-- disminución exacta de incidentes respecto al mes anterior?
+WITH mensual AS (
+    SELECT
+        TO_CHAR(
+            TO_TIMESTAMP(date_occurrence, 'MM/DD/YYYY HH:MI:SS AM'),
+            'YYYY-MM'
+        )        AS mes,
+        COUNT(*) AS conteo
+    FROM raw.chicago_crimes
+    GROUP BY mes
+)
+SELECT
+    mes,
+    conteo,
+    conteo - LAG(conteo) OVER (ORDER BY mes)              AS diferencia,
+    ROUND(
+        (conteo - LAG(conteo) OVER (ORDER BY mes))::NUMERIC
+        / LAG(conteo) OVER (ORDER BY mes) * 100,
+    2)                                                     AS cambio_porcentual
+FROM mensual
+ORDER BY mes;
+
+
+-- =============================================================================
+-- 7. Porcentaje de Crímenes por Tipo de Ubicación
+-- =============================================================================
+-- ¿Qué porcentaje del total histórico de crímenes aporta cada tipo de
+-- ubicación al problema de inseguridad en la ciudad?
+WITH total AS (
+    SELECT COUNT(*) AS total_crimenes
+    FROM raw.chicago_crimes
+    WHERE location_description IS NOT NULL
+      AND location_description != ''
+)
+SELECT
+    location_description,
+    COUNT(*)                                                   AS conteo,
+    ROUND(COUNT(*) * 100.0 / (SELECT total_crimenes FROM total), 2) AS porcentaje
+FROM raw.chicago_crimes
+WHERE location_description IS NOT NULL
+  AND location_description != ''
+GROUP BY location_description
+ORDER BY conteo DESC;
