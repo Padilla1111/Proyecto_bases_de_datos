@@ -457,6 +457,16 @@ psql -U postgres -d crimenes -f pipeline_scripts/02_data_cleaning.sql
 
 **Estado Final:** Una tabla `cleaning.chicago_crimes` con 14 columnas, tipos de datos optimizados y lista para la fase de normalización relacional.
 
+### 4. Ejecución del Proceso
+
+El script de limpieza es **idempotente** (utiliza un *refresh* destructivo del schema `cleaning`), asegurando que siempre se trabaje sobre una versión limpia de los datos.
+
+```bash
+psql -U postgres -d crimenes -f pipeline_scripts/02_data_cleaning.sql
+```
+
+**Estado Final:** Una tabla `cleaning.chicago_crimes` con 14 columnas, tipos de datos optimizados y lista para la fase de normalización relacional.
+
 ## Actividad D: Normalización a 4FN (`normalization` schema)
 
 **Objetivo:** Descomponer en relvars que eliminen todas las dependencias transitivas y derivadas completamente del schema `cleaning`.
