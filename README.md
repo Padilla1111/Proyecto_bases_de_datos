@@ -71,18 +71,24 @@ Se utilizan datos del **Chicago Data Portal**, dataset: *"Crimes - One Year Prio
 Link: https://data.cityofchicago.org/Public-Safety/Crimes-One-year-prior-to-present/x2n5-8w5q
 
 **Para este proyecto:**
-- Período: 28 de abril de 2025 — 28 de abril de 2026
+- Período: 28 de abril de 2025 — 28 de abril de 2026 (link de descarga de los datos en esta ventana de tiempo [aquí](https://drive.google.com/drive/folders/10-k0SMeGqK_xzf3rYdQ1Y15gDT14BL4y?usp=sharing))
 - Registros totales: ~232,600 (muestra de trabajo: 232,593 después de limpieza)
 - Requisito cumplido: >5,000 tuplas
 
 ###  Configuración para Replicación
 
-1. Crea una carpeta `data/` en la raíz del proyecto
-2. Descarga `raw_data.csv` desde el Chicago Data Portal
-3. Guarda el archivo como `data/raw_data.csv`
-4. El `.gitignore` ya excluye este archivo (>200 MB)
-5. Ejecuta los scripts en orden: 01 → 02 → 03
+1. Clonar el repositorio:
 
+```bash
+git clone https://github.com/NatWilsonr/Proyec
+cd proyecto-crimenes
+```
+
+2. Crea una carpeta `data/` en la raíz del proyecto
+3. Descarga `raw_data.csv` desde el drive
+4. Guarda el archivo como `data/raw_data.csv`
+5. El `.gitignore` ya excluye este archivo (>200 MB)
+6. Ejecuta los scripts en orden:
 ```bash
 # Desde la raíz del proyecto:
 psql -U tuUsuario -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
@@ -650,3 +656,5 @@ El pipeline es 100% reproducible y autocontenido:
 - `idx_incident_loc_type` en `location_type_id`
 - `idx_incident_date` en `date_occurrence`
 - `idx_incident_arrest` en `arrest` (para filtros de tasa de arresto)
+
+## Conclusiones
