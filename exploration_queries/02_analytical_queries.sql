@@ -191,8 +191,68 @@ WHERE location_description IS NOT NULL
 GROUP BY location_description
 ORDER BY conteo DESC;
 
+
 -- =============================================================================
--- Restaurar la salida a la consola (opcional)
+-- 8. Patrón de Criminalidad por Día de la Semana
+-- =============================================================================
+-- ¿Qué días de la semana concentran más delitos y cómo varía la tasa
+-- de arrestos? (1 = Lunes, 7 = Domingo)
+
+\o 'results_csv/08_criminalidad_dia_semana.csv'
+SELECT
+    EXTRACT(ISODOW FROM i.date_occurrence)::SMALLINT         AS day_of_week_num,
+    TRIM(TO_CHAR(i.date_occurrence, 'Day'))                  AS day_name,
+    COUNT(*)                                                 AS total_incidents,
+    SUM(i.arrest::INT)                                       AS total_arrests,
+    ROUND(100.0 * SUM(i.arrest::INT) / COUNT(*), 2)          AS arrest_rate_pct
+FROM normalization.incident i
+WHERE i.date_occurrence IS NOT NULL
+GROUP BY
+    EXTRACT(ISODOW FROM i.date_occurrence),
+    TRIM(TO_CHAR(i.date_occurrence, 'Day'))
+ORDER BY day_of_week_num;
+
+
+-- =============================================================================
+-- 9. Impacto y Resolución de Crímenes Domésticos vs. No Domésticos
+-- =============================================================================
+-- ¿Qué proporción de los crímenes totales son de violencia doméstica y 
+-- cómo se compara su tasa de arresto frente a los incidentes en vía pública/general?
+
+\o 'results_csv/09_comparativa_domesticos.csv'
+SELECT
+    CASE WHEN i.domestic = TRUE THEN 'Doméstico' ELSE 'No Doméstico' END AS incident_type,
+    COUNT(*)                                                 AS total_incidents,
+    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2)       AS pct_of_total_crimes,
+    SUM(i.arrest::INT)                                       AS total_arrests,
+    ROUND(100.0 * SUM(i.arrest::INT) / COUNT(*), 2)          AS arrest_rate_pct
+FROM normalization.incident i
+WHERE i.domestic IS NOT NULL
+GROUP BY i.domestic
+ORDER BY total_incidents DESC;
+
+
+-- =============================================================================
+-- 10. Top 20 Zonas Calientes (Hotspots) por Cuadra (Block)
+-- =============================================================================
+-- ¿Cuáles son las cuadras específicas que concentran la mayor cantidad
+-- de incidentes en la ciudad? Se enfoca en reincidencia pura.
+
+\o 'results_csv/10_top20_hotspots_bloques.csv'
+SELECT
+    i.block,
+    COUNT(*)                                                 AS total_incidents,
+    SUM(i.arrest::INT)                                       AS total_arrests,
+    ROUND(100.0 * SUM(i.arrest::INT) / COUNT(*), 2)          AS arrest_rate_pct
+FROM normalization.incident i
+WHERE i.block IS NOT NULL
+GROUP BY i.block
+HAVING COUNT(*) > 20 -- Umbral mínimo para considerarlo un "hotspot" recurrente
+ORDER BY total_incidents DESC
+LIMIT 20;
+
+-- =============================================================================
+-- Restaurar la salida a la consola 
 -- =============================================================================
 \o
 \pset format aligned
