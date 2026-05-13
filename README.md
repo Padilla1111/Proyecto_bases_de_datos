@@ -450,3 +450,20 @@ La estrategia de normalización se diseñó bajo los siguientes criterios:
 3. **Llaves Surrogadas:** Se generan claves primarias subrogadas (`SERIAL`) en todas las tablas, tal como se anticipó en la nota del dataset original. Las claves naturales se preservan como claves alternas (`UNIQUE`).
 4. **Mapeo IUCR → FBI_CD basado en datos:** La dependencia transitiva `iucr → fbi_cd` se deriva directamente de los datos crudos (no del xlsx externo), ya que cada registro del dataset contiene ambos códigos. Esto evita inconsistencias entre el catálogo externo y los datos reales cargados.
 5. **Índices Post-Carga:** Los índices sobre las columnas de mayor uso analítico (`beat_id`, `ward_id`, `iucr_id`, `date_occurrence`, `arrest`) se crean al final del script para evitar el costo de reindexación incremental durante la inserción masiva.
+
+## Actividad E: Consultas Analíticas
+
+Las consultas de interés se ubican en `exploration_queries/02_analytical_queries.sql` y se ejecutan directamente sobre el schema `normalization`.
+
+### 1. Ejecución
+
+```bash
+psql -U [tuUsuario] -d crimenes -f exploration_queries/02_analytical_queries.sql
+```
+
+### 2. Consultas Implementadas
+
+| # | Pregunta analítica |
+| :--- | :--- |
+| 1 | ¿En qué mes del año ocurren más crímenes? ¿Varía la tasa de arresto estacionalmente? |
+| 2 | ¿Qué tipos de crimen tienen la tasa de arresto más alta y más baja (con más de 100 incidentes)? |
