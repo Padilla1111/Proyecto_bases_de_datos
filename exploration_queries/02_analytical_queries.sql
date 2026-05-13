@@ -53,11 +53,11 @@ ORDER BY arrest_rate_pct DESC;
 
 
 -- =============================================================================
--- 3. Concentración por Ward y Variación Mes a Mes
+-- 3. Variación Mes a Mes por Ward
 -- =============================================================================
--- ¿Qué wards concentran más criminalidad y cómo evolucionó el volumen
--- respecto al mes anterior?
--- LAG() permite comparar cada ward consigo mismo en el tiempo.
+-- ¿Cómo evolucionó el volumen de criminalidad por ward respecto al mes
+-- anterior? LAG() permite comparar cada ward consigo mismo en el tiempo,
+-- revelando tendencias locales de incremento o reducción.
 
 WITH monthly_ward AS (
     SELECT
@@ -66,7 +66,7 @@ WITH monthly_ward AS (
         COUNT(*)                                             AS total_incidents
     FROM normalization.incident i
     JOIN normalization.ward w ON i.ward_id = w.ward_id
-    GROUP BY w.ward_id, w.neighborhoods, DATE_TRUNC('month', i.date_occurrence)
+    GROUP BY w.ward_id, DATE_TRUNC('month', i.date_occurrence)
 )
 SELECT
     ward_id,
