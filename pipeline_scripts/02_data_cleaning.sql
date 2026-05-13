@@ -35,8 +35,8 @@ WITH RankedCrimes AS (
         TRIM(UPPER(case_number)) AS case_number,
         
         -- CORRECCIÓN: Conversión flexible a TIMESTAMP en el SELECT
-        CAST(NULLIF(TRIM(date_occurrence), '') AS TIMESTAMP) AS incident_timestamp,
-        
+        TO_TIMESTAMP(TRIM(date_occurrence), 'MM/DD/YYYY HH12:MI:SS AM') AS incident_timestamp,
+
         TRIM(UPPER(block)) AS block,
         TRIM(iucr) AS iucr,
         TRIM(UPPER(primary_description)) AS primary_description,
@@ -65,7 +65,7 @@ WITH RankedCrimes AS (
         -- CORRECCIÓN: Conversión flexible a TIMESTAMP en la ventana
         ROW_NUMBER() OVER(
             PARTITION BY TRIM(UPPER(case_number)) 
-            ORDER BY CAST(NULLIF(TRIM(date_occurrence), '') AS TIMESTAMP) DESC
+            ORDER BY TO_TIMESTAMP(TRIM(date_occurrence), 'MM/DD/YYYY HH12:MI:SS AM') DESC
         ) as rn
     FROM raw.chicago_crimes
 )

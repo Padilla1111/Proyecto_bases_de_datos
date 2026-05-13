@@ -2,10 +2,6 @@
 -- Consultas Analíticas sobre Datos Normalizados
 -- Proyecto BD: Análisis de Criminalidad en Chicago (Último Año)
 -- =============================================================================
--- Este script contiene las consultas de interés que responden las preguntas
--- analíticas centrales del proyecto, ejecutadas directamente sobre el schema
--- `normalization`.
---
 -- Prerrequisito: haber ejecutado 03_data_normalization.sql
 --
 -- Ejecución desde la raíz del proyecto:
@@ -16,16 +12,17 @@
 -- =============================================================================
 -- 1. Tendencia Mensual de Criminalidad
 -- =============================================================================
-
 -- ¿En qué mes del año ocurren más crímenes? ¿Varía la tasa de arresto?
 -- Permite identificar si la efectividad policial varía estacionalmente,
 -- independientemente del volumen total de delitos.
+
 SELECT
     EXTRACT(MONTH FROM i.date_occurrence)::SMALLINT          AS month,
     TO_CHAR(i.date_occurrence, 'TMMonth')                    AS month_name,
     COUNT(*)                                                 AS total_incidents,
     SUM(i.arrest::INT)                                       AS total_arrests,
-    ROUND(100.0 * SUM(i.arrest::INT) / COUNT(*), 2)          AS arrest_rate_pct
+    ROUND(100.0 * SUM(i.arrest::INT) / COUNT(*), 2)          AS arrest_rate_pct,
+    RANK() OVER (ORDER BY COUNT(*) DESC)                     AS rank_by_volume
 FROM normalization.incident i
 GROUP BY
     EXTRACT(MONTH FROM i.date_occurrence),
@@ -36,16 +33,18 @@ ORDER BY month;
 -- =============================================================================
 -- 2. Tasa de Arresto por Tipo de Crimen
 -- =============================================================================
-
 -- ¿Qué tipos de crimen tienen la tasa de arresto más alta y más baja?
 -- Se consideran solo tipos con más de 100 incidentes para evitar que
--- categorías raras inflen artificialmente la tasa (ej. un único delito
--- con arresto = 100%).
+-- categorías raras inflen artificialmente la tasa.
+
 SELECT
     ic.primary_description,
     COUNT(*)                                                 AS total_incidents,
     SUM(i.arrest::INT)                                       AS total_arrests,
-    ROUND(100.0 * SUM(i.arrest::INT) / COUNT(*), 2)          AS arrest_rate_pct
+    ROUND(100.0 * SUM(i.arrest::INT) / COUNT(*), 2)          AS arrest_rate_pct,
+    RANK() OVER (ORDER BY
+        ROUND(100.0 * SUM(i.arrest::INT) / COUNT(*), 2) DESC
+    )                                                        AS rank_by_arrest_rate
 FROM normalization.incident i
 JOIN normalization.iucr ic ON i.iucr_id = ic.iucr_id
 GROUP BY ic.primary_description
@@ -54,34 +53,41 @@ ORDER BY arrest_rate_pct DESC;
 
 
 -- =============================================================================
--- 3. Concentración Geográfica por Distrito
+-- 3. Concentración por Ward y Variación Mes a Mes
 -- =============================================================================
+-- ¿Qué wards concentran más criminalidad y cómo evolucionó el volumen
+-- respecto al mes anterior?
+-- LAG() permite comparar cada ward consigo mismo en el tiempo.
 
--- ¿Qué distritos concentran el mayor volumen de criminalidad?
--- pct_of_total cuantifica qué fracción del crimen total de la ciudad
--- corresponde a cada distrito, sin depender del tamaño absoluto.
+WITH monthly_ward AS (
+    SELECT
+        w.ward_id,
+        DATE_TRUNC('month', i.date_occurrence)               AS month,
+        COUNT(*)                                             AS total_incidents
+    FROM normalization.incident i
+    JOIN normalization.ward w ON i.ward_id = w.ward_id
+    GROUP BY w.ward_id, w.neighborhoods, DATE_TRUNC('month', i.date_occurrence)
+)
 SELECT
-    d.district_name,
-    COUNT(*)                                                 AS total_incidents,
-    SUM(i.arrest::INT)                                       AS total_arrests,
-    ROUND(100.0 * SUM(i.arrest::INT) / COUNT(*), 2)          AS arrest_rate_pct,
-    ROUND(
-        100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2
-    )                                                        AS pct_of_total
-FROM normalization.incident   i
-JOIN normalization.beat        b ON i.beat_id      = b.beat_id
-JOIN normalization.district    d ON b.district_id  = d.district_id
-GROUP BY d.district_name
-ORDER BY total_incidents DESC;
+    ward_id,
+    TO_CHAR(month, 'YYYY-MM')                                AS month,
+    total_incidents,
+    LAG(total_incidents) OVER (
+        PARTITION BY ward_id ORDER BY month
+    )                                                        AS prev_month_incidents,
+    total_incidents - LAG(total_incidents) OVER (
+        PARTITION BY ward_id ORDER BY month
+    )                                                        AS month_over_month_delta
+FROM monthly_ward
+ORDER BY ward_id, month;
 
 
 -- =============================================================================
 -- 4. Distribución por Franja Horaria
 -- =============================================================================
+-- ¿En qué franja horaria se concentran más delitos y cómo varía la
+-- tasa de arresto entre franjas?
 
--- ¿En qué franja horaria se concentran más delitos?
--- Se categorizan los incidentes en Madrugada, Mañana, Tarde y Noche
--- para comunicar patrones temporales a audiencias no técnicas.
 SELECT
     CASE
         WHEN EXTRACT(HOUR FROM i.date_occurrence) BETWEEN  0 AND  5 THEN 'Madrugada'
@@ -90,7 +96,8 @@ SELECT
         ELSE 'Noche'
     END                                                      AS time_period,
     COUNT(*)                                                 AS total_incidents,
-    ROUND(100.0 * SUM(i.arrest::INT) / COUNT(*), 2)          AS arrest_rate_pct
+    ROUND(100.0 * SUM(i.arrest::INT) / COUNT(*), 2)          AS arrest_rate_pct,
+    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2)       AS pct_of_total
 FROM normalization.incident i
 GROUP BY time_period
 ORDER BY total_incidents DESC;
