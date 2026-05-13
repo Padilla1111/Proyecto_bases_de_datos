@@ -98,7 +98,7 @@ Esto creará el schema, la tabla y cargará los datos automáticamente.
 ### Verificar que funcionó:
 
 ```bash
-psql -U postgres -d crimenes -c "SELECT COUNT(*) FROM rawc.crimes;"
+psql -U [tuUsuario] -d crimenes -c "SELECT COUNT(*) FROM rawc.crimes;"
 ```
 ## Análisis preliminar
 
