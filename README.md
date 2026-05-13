@@ -621,6 +621,72 @@ month_over_month_delta = total_incidents - LAG(total_incidents) OVER (...)
 
 **Insight:** La Tarde es el período de mayor riesgo (31% de crímenes), pero la Noche tiene **mayor tasa de arresto (18.2% vs 15.6%)**. Sugiere respuesta más efectiva durante horas de mayor vigilancia (noche), aunque el volumen total es menor.
 
+# Análisis de Preguntas Clave
+
+> Todos los resultados se obtienen sobre el dataset con la limpieza preliminar aplicada: duplicados de `case_number` resueltos conservando el registro más reciente, strings vacíos tratados como `NULL`, y `date_occurrence` casteado a `TIMESTAMP`.
+
+---
+
+## Query 5: 3 zonas de patrullaje (beat) con mayor cantidad de crímenes dentro de cada distrito policial
+
+El distrito policial se obtiene de los primeros 2 dígitos del `beat` (rellenando con ceros a la izquierda para los beats de 3 dígitos).
+
+El beat `1834` del distrito 18 destaca como el de mayor incidencia en todo Chicago con 2,918 crímenes, casi 1,000 más que el segundo lugar del mismo distrito (`1831`, con 1,842). En general, los distritos 1, 6, 12 y 18 concentran los beats con mayor actividad criminal, lo que apunta a zonas del centro, norte y noroeste de la ciudad como las más afectadas.
+
+| Distrito | #1 Beat | #2 Beat | #3 Beat |
+|---|---|---|---|
+| 1 | 123 (2,018) | 112 (1,638) | 111 (1,515) |
+| 6 | 624 (1,569) | 631 (1,542) | 612 (1,438) |
+| 12 | 1214 (1,681) | 1224 (1,479) | 1232 (1,456) |
+| 18 | 1834 (2,918) | 1831 (1,842) | 1832 (1,545) |
+| 25 | 2533 (1,326) | 2512 (1,295) | 2521 (932) |
+
+*Se muestran los distritos con mayor incidencia. El dataset contiene 25 distritos en total.*
+
+---
+
+## Query 6: ¿Cómo evoluciona la criminalidad mes a mes? ¿Cuál fue el aumento o disminución exacta de incidentes respecto al mes anterior?
+
+| Mes | Conteo | Diferencia | Cambio % |
+|---|---|---|---|
+| 2025-04 | 1,267 | — | — |
+| 2025-05 | 20,489 | +19,222 | — * |
+| 2025-06 | 21,101 | +612 | +2.99% |
+| 2025-07 | 22,646 | +1,545 | +7.32% |
+| 2025-08 | 21,317 | -1,329 | -5.87% |
+| 2025-09 | 20,327 | -990 | -4.64% |
+| 2025-10 | 20,957 | +630 | +3.10% |
+| 2025-11 | 18,391 | -2,566 | -12.24% |
+| 2025-12 | 17,452 | -939 | -5.11% |
+| 2026-01 | 16,825 | -627 | -3.59% |
+| 2026-02 | 16,369 | -456 | -2.71% |
+| 2026-03 | 18,832 | +2,463 | +15.05% |
+| 2026-04 | 16,592 | -2,240 | -11.89% |
+
+*\* El cambio de abril a mayo 2025 no es interpretable: abril 2025 solo incluye 2 días (el dataset arranca el 29 de abril), por lo que su conteo de 1,267 no es comparable.*
+
+El pico de criminalidad ocurre en **julio 2025** con 22,646 incidentes, consistente con la tendencia estacional de mayor actividad en verano. A partir de agosto comienza un descenso sostenido que llega a su mínimo en **febrero 2026** (16,369), el mes más frío. Marzo 2026 muestra un repunte del 15.05%, señal del inicio de la temporada cálida.
+
+---
+
+## Query 7: Porcentaje del total histórico de crímenes aporta cada tipo de ubicación al problema de inseguridad
+
+| Tipo de Ubicación | Conteo | Porcentaje |
+|---|---|---|
+| STREET | 62,755 | 27.12% |
+| APARTMENT | 45,349 | 19.59% |
+| RESIDENCE | 27,094 | 11.71% |
+| SIDEWALK | 11,685 | 5.05% |
+| PARKING LOT / GARAGE (NON RESIDENTIAL) | 8,604 | 3.72% |
+| SMALL RETAIL STORE | 8,409 | 3.63% |
+| DEPARTMENT STORE | 5,511 | 2.38% |
+| RESTAURANT | 5,191 | 2.24% |
+| ALLEY | 4,967 | 2.15% |
+| OTHER (SPECIFY) | 4,156 | 1.80% |
+| Resto (120 tipos) | 47,279 | 20.61% |
+
+La **calle** concentra el 27.12% de todos los crímenes — más de uno de cada cuatro incidentes ocurre en la vía pública. Los **espacios residenciales** combinados (`APARTMENT` + `RESIDENCE` + `RESIDENCE - PORCH / HALLWAY`) suman el **32.51%**, superando incluso a la calle. El top 10 de ubicaciones representa el **79.39%** del total, lo que indica una alta concentración contextual de los crímenes. En contraste, los 120 tipos de ubicación restantes apenas suman el 20.61%.
+
 ---
 
 ## Ejecución de Queries
