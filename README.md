@@ -396,55 +396,66 @@ Con 50 vecindarios, se listan los 10 con más incidencia:
 | 16 (Englewood, West Englewood) | 7,085 |
 | 21 (Auburn Gresham, Washington Heights) | 6,978 |
 
-## Actividad C: Limpieza (`cleaning` schema)
+## Actividad C: Limpieza de Datos (`cleaning` schema)
 
-**Objetivo:** Conversión de tipos, deduplicación, tratamiento de nulos, estandarización de texto.
+**Objetivo:** Transformar los datos crudos en un conjunto de información íntegro, tipado correctamente y libre de redundancias para facilitar el análisis posterior.
 
-### 1. Estrategia de deduplicación
+---
 
-**Hallazgo:** 18 case_numbers tenían múltiples registros con fechas diferentes → actualización de expedientes policiales.
+### 1. Estrategia de Deduplicación y Consistencia
 
-**Solución:** Usar ventana temporal — mantener solo el registro más reciente por case_number:
+**Hallazgo Crítico:** Durante el análisis preliminar, identificamos 18 `case_numbers` con múltiples registros asociados. Tras una inspección detallada, confirmamos que esto ocurre principalmente en casos de homicidio, donde la policía genera nuevos registros para actualizar la hora del incidente conforme avanza la investigación, en lugar de sobreescribir el anterior.
+
+**Solución Técnica:** Implementamos una **ventana temporal** para garantizar que cada crimen sea único en nuestra base de datos, conservando exclusivamente la versión más reciente (la más precisa) de cada expediente.
+
 ```sql
+-- Conservar solo el último estado del reporte policial
 ROW_NUMBER() OVER(
     PARTITION BY case_number 
     ORDER BY date_occurrence DESC
 ) = 1
 ```
 
-**Resultado:** 232,593 registros únicos (reducción de 22 duplicados históricos)
+**Resultado:** Se consolidaron 232,593 registros únicos, eliminando 22 registros que representaban actualizaciones históricas o errores de carga idénticos.
 
-### 2. Transformaciones realizadas
+---
 
-| Columna | Raw | Cleaning | Lógica |
+### 2. Transformaciones de Tipado y Normalización
+
+Para optimizar el rendimiento de las consultas y permitir cálculos matemáticos (especialmente en análisis geográfico y temporal), realizamos las siguientes conversiones de esquema:
+
+| Columna | Origen (Raw) | Destino (Cleaning) | Lógica de Negocio Aplicada |
 | :--- | :--- | :--- | :--- |
-| `date_occurrence` | TEXT | TIMESTAMP | Formato: `MM/DD/YYYY HH12:MI:SS AM` |
-| `arrest`, `domestic` | TEXT (Y/N) | BOOLEAN | Y → TRUE, N → FALSE, vacío → NULL |
-| `beat`, `ward` | TEXT | INTEGER | Valores numéricos con NULLIF para vacíos |
-| `x_coordinate`, `y_coordinate` | TEXT | DOUBLE PRECISION | Casting con NULLIF |
-| `latitude`, `longitude` | TEXT | DOUBLE PRECISION | Casting con NULLIF |
-| `primary_description`, `block` | TEXT | VARCHAR | TRIM + UPPER para consistencia |
-| `location_description` | TEXT | VARCHAR | TRIM + consolidación STREET/SIDEWALK |
+| `date_occurrence` | TEXT | TIMESTAMP | Conversión del formato de 12 horas (AM/PM) a un objeto de tiempo nativo. |
+| `arrest`, `domestic` | TEXT (Y/N) | BOOLEAN | Transformación de indicadores de texto a valores lógicos (`TRUE`/`FALSE`). |
+| `beat`, `ward` | TEXT | INTEGER | Limpieza de caracteres no numéricos y asignación de tipos enteros para indexación. |
+| `latitude`, `longitude` | TEXT | DOUBLE PRECISION | Conversión a punto flotante de alta precisión para habilitar funciones geoespaciales. |
+| `primary_description` | TEXT | VARCHAR | Estandarización total mediante `TRIM` y `UPPER` para evitar duplicados por espacios o minúsculas. |
 
-**Columnas eliminadas:**
-- `location` (tupla "(lat, lon)" — redundante)
-- `x_coordinate`, `y_coordinate` (proyección Illinois State Plane — redundante con lat/lon WGS84)
+**Eliminación de Redundancias:**
+*   **Columna `location`:** Eliminada por ser una concatenación redundante de latitud y longitud que ya tenemos por separado.
+*   **Coordenadas X/Y:** Se descartaron las proyecciones estatales de Illinois al contar con las coordenadas geográficas universales WGS84 (Lat/Lon).
 
-### 3. Técnicas Avanzadas de Limpieza
+---
 
-* **Tratamiento de nulos:** `NULLIF(TRIM(columna), '')` para strings vacíos
-* **Fuzzy matching:** Extensión `fuzzystrmatch` (distancia Levenshtein) para corregir typos delictivos
-* **Consolidación de categorías:** Variantes de STREET/SIDEWALK agrupadas; ubicaciones raras (<5 registros) → "OTHER (LOW FREQUENCY)"
-* **Imputación de FBI_CD faltantes:** Usar mapeo IUCR → FBI_CD del mismo dataset
+### 3. Técnicas Avanzadas de Ingeniería de Datos
 
-**Resultado:** Tabla `cleaning.chicago_crimes` (14 columnas, tipos nativos)
+*   **Tratamiento de Nulos Silenciosos:** Aplicamos `NULLIF(TRIM(columna), '')` en todas las columnas críticas. Esto es vital porque el dataset original contenía espacios en blanco que PostgreSQL no reconoce como nulos, lo que podría sesgar los promedios y conteos estadísticos.
+*   **Fuzzy Matching (Extensión `fuzzystrmatch`):** Utilizamos el algoritmo de **Distancia de Levenshtein** para la limpieza de texto. Esta técnica permite identificar qué tan similares son dos palabras; así, pudimos detectar errores de dedo en la captura manual de los delitos y unificarlos bajo una sola categoría correcta de forma automática.
+*   **Agrupación de Categorías y "Low Frequency":** Para mejorar la claridad de las visualizaciones, consolidamos variantes de ubicaciones (ej. distintos formatos de `STREET` y `SIDEWALK`). Aquellas categorías con menos de 5 registros en todo el año fueron reclasificadas como `OTHER (LOW FREQUENCY)` para reducir el ruido estadístico.
+*   **Imputación Lógica de `FBI_CD`:** Detectamos registros donde faltaba el código federal del FBI. En lugar de borrarlos, creamos un mapeo interno basado en el código local `IUCR`. Si un registro tenía el código local pero no el federal, el script le asigna automáticamente el código correspondiente basado en los patrones encontrados en el resto del dataset.
 
-**Ejecución:**
+---
+
+### 4. Ejecución del Proceso
+
+El script de limpieza es **idempotente** (utiliza un *refresh* destructivo del schema `cleaning`), asegurando que siempre se trabaje sobre una versión limpia de los datos.
+
 ```bash
 psql -U postgres -d crimenes -f pipeline_scripts/02_data_cleaning.sql
 ```
 
----
+**Estado Final:** Una tabla `cleaning.chicago_crimes` con 14 columnas, tipos de datos optimizados y lista para la fase de normalización relacional.
 
 ## Actividad D: Normalización a 4FN (`normalization` schema)
 
