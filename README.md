@@ -366,10 +366,10 @@ Salida esperada: 4 tablas con resultados analíticos listos para visualización/
 ## Reproducibilidad
 
 El pipeline es 100% reproducible y autocontenido:
-- ✅ Solo requiere `raw_data.csv` (descargable del Chicago Data Portal)
-- ✅ Todos los catálogos se derivan del cleaning con `SELECT DISTINCT`
-- ✅ Sin archivos externos, sin hardcoding
-- ✅ Scripts idempotentes (refresh destructivo, DROP CASCADE)
+- Solo requiere `raw_data.csv` (descargable del Chicago Data Portal)
+- Todos los catálogos se derivan del cleaning con `SELECT DISTINCT`
+- Sin archivos externos, sin hardcoding
+- Scripts idempotentes (refresh destructivo, DROP CASCADE)
 
 ## Limitaciones Éticas Reconocidas
 
@@ -389,10 +389,3 @@ El pipeline es 100% reproducible y autocontenido:
 - `idx_incident_loc_type` en `location_type_id`
 - `idx_incident_date` en `date_occurrence`
 - `idx_incident_arrest` en `arrest` (para filtros de tasa de arresto)
-
-Queries analíticas ejecutan <1 segundo en dataset completo (232k rows).
-
----
-
-**Última actualización:** Abril 2026  
-**Estado del proyecto:** ✅ Completado — Todas las actividades (A-E) implementadas
