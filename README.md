@@ -745,3 +745,12 @@ El pipeline es 100% reproducible y autocontenido:
 - `idx_incident_arrest` en `arrest` (para filtros de tasa de arresto)
 
 ## Conclusiones
+## Conclusiones
+
+Chicago no es una ciudad uniformemente peligrosa. Es una ciudad con patrones. La criminalidad no se distribuye al azar: tiene estaciones, tiene geografías y afecta desproporcionadamente los espacios donde la gente vive y transita en su día a día. El análisis deja claro que los crímenes siguen ciclos predecibles, se concentran en zonas específicas y golpean sobre todo en la calle y en el hogar, que son precisamente los lugares donde uno menos debería tener que cuidarse.
+
+Quizás el hallazgo más revelador no es dónde o cuándo ocurren los crímenes, sino cuáles se resuelven. La baja tasa de arresto en los delitos de mayor volumen como el robo o la batería contrasta con la alta efectividad en infracciones regulatorias. Esto sugiere que el sistema policial está más orientado a la ejecución de normas específicas que a la protección frente a los delitos que más impactan a la gente común. El crimen que más se sufre es, paradójicamente, el que menos consecuencias tiene para quien lo comete.
+
+Lo que más llama la atención es que la tasa de arresto se mantiene prácticamente igual a lo largo de todo el año, incluso cuando los incidentes aumentan casi un 40% en verano. El sistema no se adapta al pico de demanda, simplemente lo absorbe con la misma eficiencia de siempre. Eso, más que cualquier número, define el verdadero reto de seguridad pública en Chicago.
+
+Estos hallazgos iluminan un problema real y actual de seguridad pública en Chicago. Reconocer un problema es siempre el primer paso para resolverlo, y lo que los datos revelan es exactamente eso: un punto de partida concreto hacia una ciudad más segura. Vale la pena destacar que esta metodología es completamente replicable en cualquier conjunto de datos de cualquier ciudad o país. Con el enfoque correcto y la voluntad de mirar los números de frente, estamos un paso más cerca de construir comunidades más seguras para todos.
