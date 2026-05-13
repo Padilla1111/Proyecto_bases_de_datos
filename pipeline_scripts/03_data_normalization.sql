@@ -361,7 +361,7 @@ SELECT
     i.iucr_id,
     lt.location_type_id
 
-FROM raw.chicago_crimes r
+FROM cleaning.chicago_crimes r
 LEFT JOIN normalization.beat          b  ON TRIM(r.beat)                 = b.beat
 LEFT JOIN normalization.iucr          i  ON TRIM(r.iucr)                 = i.iucr
 LEFT JOIN normalization.location_type lt ON TRIM(r.location_description) = lt.location_description
