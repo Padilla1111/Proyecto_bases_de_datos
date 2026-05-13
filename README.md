@@ -22,7 +22,7 @@ El objetivo principal es transformar un conjunto de datos plano de ~232,600 regi
 1. **Carga (raw):** Importación íntegra del CSV original sin transformaciones
 2. **Limpieza (cleaning):** Conversión de tipos, deduplicación temporal, estandarización de texto y tratamiento de valores nulos
 3. **Normalización (normalization):** Descomposición en 6 relvars en 4FN, derivadas completamente del schema cleaning sin dependencias de archivos externos
-4. **Análisis avanzado:** Consultas SQL con funciones de ventana (`RANK()`, `LAG()`) para identificar patrones temporales, tasas de arresto y variaciones geográficas
+4. **Análisis avanzado:** Diez consultas en `exploration_queries/02_analytical_queries.sql` (varias con `RANK()`, `LAG()` y otras ventanas) exportadas a CSV; la mayoría operan sobre `normalization`, tres sobre `raw` (ver Actividad E).
 
 **Preguntas clave respondidas:**
 - ¿En qué meses del año se concentra la criminalidad y cómo varía la efectividad policial (tasa de arresto)?
@@ -39,7 +39,7 @@ Para la fase `raw`, se respeta la estructura del archivo fuente. La siguiente ta
 | **Case Number** | Texto | Identificador único del caso (PK natural) |
 | **Date of Occurrence** | Timestamp | Fecha y hora exacta del incidente |
 | **Block** | Texto | Dirección anonimizada a nivel de cuadra |
-| **IUCR** | Texto | Illinois Uniform Crime Reporting code (410 valores únicos) |
+| **IUCR** | Texto | Illinois Uniform Crime Reporting code (cardinalidad depende del corte temporal del CSV; en el EDA del raw documentado: 332 códigos distintos) |
 | **Primary Description** | Texto | Categoría principal del delito (31 valores únicos) |
 | **Secondary Description** | Texto | Detalle o subcategoría del delito |
 | **Location Description** | Texto | Tipo de lugar (calle, residencia, etc. — 131 valores únicos) |
@@ -54,7 +54,7 @@ Para la fase `raw`, se respeta la estructura del archivo fuente. La siguiente ta
 | **Longitude** | Numérico | Coordenada geográfica exacta |
 | **Location** | Texto | Tupla "(lat, lon)" — redundante con Latitude/Longitude |
 
-> **Nota sobre redundancia:** Las columnas `LOCATION`, `X COORDINATE` y `Y COORDINATE` son eliminadas en la fase de limpieza por redundancia. `X COORDINATE` y `Y COORDINATE` usan una proyección diferente (Illinois State Plane) vs. Latitude/Longitude (WGS84), y se conservan Latitude/Longitude por ser el estándar analítico.
+> **Nota sobre redundancia:** En limpieza solo se elimina la columna compuesta `location` (redundante con latitud y longitud). Las columnas `x_coordinate` y `y_coordinate` (Illinois State Plane) se **conservan** en `cleaning` junto con `latitude` y `longitude` (WGS84); en normalización pasan a `normalization.incident` con el tipado definido en el script `03`.
 
 ### Consideraciones Éticas
 
@@ -80,17 +80,20 @@ Link: https://data.cityofchicago.org/Public-Safety/Crimes-One-year-prior-to-pres
 1. Clonar el repositorio:
 
 ```bash
-git clone https://github.com/NatWilsonr/Proyec
-cd proyecto-crimenes
+git clone https://github.com/Padilla1111/Proyecto_bases_de_datos.git
+cd Proyecto_bases_de_datos
 ```
 
-2. Crea una carpeta `data/` en la raíz del proyecto
-3. Descarga `raw_data.csv` desde el drive
-4. Guarda el archivo como `data/raw_data.csv`
-5. El `.gitignore` ya excluye este archivo (>200 MB)
-6. Ejecuta los scripts en orden:
+2. Crea una carpeta `data/` en la raíz del proyecto (si no existe).
+3. Descarga `raw_data.csv` desde el drive enlazado arriba.
+4. Guarda el archivo como `data/raw_data.csv`.
+5. El archivo bajo `data/` queda fuera de Git por la regla `data/*` en el `.gitignore` de la raíz (no uses un `.gitignore` separado dentro de `data/`).
+6. **PostgreSQL:** el script `02_data_cleaning.sql` ejecuta `CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;`. Se requiere un rol con permiso para crear extensiones (habitualmente superusuario) o que un administrador instale `fuzzystrmatch` de antemano.
+7. Asegura la carpeta `results_csv/` en la raíz (en el repositorio ya viene incluida; si la borras, créala de nuevo antes de las analíticas). El script `exploration_queries/02_analytical_queries.sql` escribe ahí archivos CSV mediante `\o`.
+8. Ejecuta los scripts **con el directorio de trabajo actual = raíz del repositorio** (obligatorio: `01_raw_data_schema_creation_and_load.sql` usa `\COPY ... FROM './data/raw_data.csv'`, y las rutas `\o` de las analíticas son relativas a ese mismo directorio).
+
 ```bash
-# Desde la raíz del proyecto:
+# PowerShell / bash: primero cd a la raíz del clon, luego:
 psql -U tuUsuario -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
 psql -U tuUsuario -d crimenes -f pipeline_scripts/02_data_cleaning.sql
 psql -U tuUsuario -d crimenes -f pipeline_scripts/03_data_normalization.sql
@@ -100,19 +103,20 @@ psql -U tuUsuario -d crimenes -f exploration_queries/02_analytical_queries.sql
 ## Estructura del Repositorio
 
 ```
-├── README.md                                    ← Documentación técnica
-├── data/
-│   ├── .gitignore                              ← Excluye raw_data.csv (~200 MB)
-│   └── raw_data.csv                            ← Usuario descarga de Chicago Portal
-│
-├── pipeline_scripts/                           ← Pipeline de datos (3 fases)
-│   ├── 01_raw_data_schema_creation_and_load.sql   ← Fase Raw: carga íntegra CSV
-│   ├── 02_data_cleaning.sql                       ← Fase Cleaning: limpieza + dedup
-│   └── 03_data_normalization.sql                  ← Fase Normalization: 4FN
-│
-└── exploration_queries/                        ← Queries analíticas
-    ├── 01_raw_data_exploration.sql             ← EDA preliminar (soporte fase Raw)
-    └── 02_analytical_queries.sql               ← 4 consultas avanzadas con window functions
+├── README.md
+├── .gitignore                    ← Excluye contenido de data/ (p. ej. raw_data.csv)
+├── index.html                    ← Punto de entrada opcional en raíz
+├── data/                         ← raw_data.csv (local; no versionado)
+├── pipeline_scripts/
+│   ├── 01_raw_data_schema_creation_and_load.sql
+│   ├── 02_data_cleaning.sql
+│   └── 03_data_normalization.sql
+├── exploration_queries/
+│   ├── 01_raw_data_exploration.sql
+│   └── 02_analytical_queries.sql   ← 10 consultas → CSV en results_csv/
+├── results_csv/                  ← Salida de 02_analytical_queries.sql (\o)
+└── visualizations/
+    └── index.html
 ```
 
 ---
@@ -123,7 +127,7 @@ psql -U tuUsuario -d crimenes -f exploration_queries/02_analytical_queries.sql
 
 **Objetivo:** Importación íntegra del CSV sin transformaciones, preservando tipos de texto.
 
-**Ejecución:**
+**Ejecución (desde la raíz del repositorio):**
 ```bash
 psql -U tuUsuario -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_and_load.sql
 ```
@@ -137,15 +141,15 @@ psql -U tuUsuario -d crimenes -f pipeline_scripts/01_raw_data_schema_creation_an
 ## Análisis preliminar
 
 ### Ejecución del proceso
-Para ejecutar el análisis preliminar, asegúrate de estar en la raíz del proyecto en tu terminal y ejecuta el siguiente comando:
+Para ejecutar el análisis preliminar, asegúrate de estar en la **raíz del proyecto** y ejecuta:
 
 ```bash
-psql -U [tuUsuario] -d crimenes -f exploration_queries/01_raw_data_exploration.sql
+psql -U tuUsuario -d crimenes -f exploration_queries/01_raw_data_exploration.sql
 ```
 
 ## Descripción de Columnas y Valores Únicos
 
-Total de tuplas en la tabla: **232,588**
+Total de tuplas en la tabla: **232,588** (conteo sobre el snapshot de `raw_data.csv` usado en el EDA documentado; una descarga distinta del portal puede variar ligeramente respecto a las cifras de carga en Actividad B).
 
 | Columna | Valores Únicos | Descripción |
 |---|---|---|
@@ -409,10 +413,10 @@ Con 50 vecindarios, se listan los 10 con más incidencia:
 **Solución Técnica:** Implementamos una **ventana temporal** para garantizar que cada crimen sea único en nuestra base de datos, conservando exclusivamente la versión más reciente (la más precisa) de cada expediente.
 
 ```sql
--- Conservar solo el último estado del reporte policial
+-- Conservar solo el último estado del reporte policial (equivalente al script 02)
 ROW_NUMBER() OVER(
-    PARTITION BY case_number 
-    ORDER BY date_occurrence DESC
+    PARTITION BY TRIM(UPPER(case_number))
+    ORDER BY TO_TIMESTAMP(TRIM(date_occurrence), 'MM/DD/YYYY HH12:MI:SS AM') DESC
 ) = 1
 ```
 
@@ -426,15 +430,16 @@ Para optimizar el rendimiento de las consultas y permitir cálculos matemáticos
 
 | Columna | Origen (Raw) | Destino (Cleaning) | Lógica de Negocio Aplicada |
 | :--- | :--- | :--- | :--- |
-| `date_occurrence` | TEXT | TIMESTAMP | Conversión del formato de 12 horas (AM/PM) a un objeto de tiempo nativo. |
+| `date_occurrence` | TEXT | `incident_timestamp` TIMESTAMP | Mismo instante que en raw, parseado con `TO_TIMESTAMP(..., 'MM/DD/YYYY HH12:MI:SS AM')`. |
 | `arrest`, `domestic` | TEXT (Y/N) | BOOLEAN | Transformación de indicadores de texto a valores lógicos (`TRUE`/`FALSE`). |
 | `beat`, `ward` | TEXT | INTEGER | Limpieza de caracteres no numéricos y asignación de tipos enteros para indexación. |
+| `x_coordinate`, `y_coordinate` | TEXT | DOUBLE PRECISION | Conservadas (proyección Illinois State Plane); en `03` se proyectan a entero en `normalization.incident`. |
 | `latitude`, `longitude` | TEXT | DOUBLE PRECISION | Conversión a punto flotante de alta precisión para habilitar funciones geoespaciales. |
-| `primary_description` | TEXT | VARCHAR | Estandarización total mediante `TRIM` y `UPPER` para evitar duplicados por espacios o minúsculas. |
+| `case_number`, `block`, `iucr`, `secondary_description`, `location_description`, `fbi_cd` | TEXT | TEXT (con `TRIM` / `UPPER` según columna en el script) | Estandarización y nulos silenciosos (`NULLIF(TRIM(...), '')`) donde aplica. |
 
-**Eliminación de Redundancias:**
-*   **Columna `location`:** Eliminada por ser una concatenación redundante de latitud y longitud que ya tenemos por separado.
-*   **Coordenadas X/Y:** Se descartaron las proyecciones estatales de Illinois al contar con las coordenadas geográficas universales WGS84 (Lat/Lon).
+**Eliminación de redundancias (solo en limpieza):**
+*   **Columna `location` (raw):** no se copia a `cleaning.chicago_crimes`; es redundante con `latitude` y `longitude`.
+*   **Coordenadas X/Y:** permanecen en `cleaning` y en la tabla de hechos normalizada; no se descartan en `02`.
 
 ---
 
@@ -452,20 +457,11 @@ Para optimizar el rendimiento de las consultas y permitir cálculos matemáticos
 El script de limpieza es **idempotente** (utiliza un *refresh* destructivo del schema `cleaning`), asegurando que siempre se trabaje sobre una versión limpia de los datos.
 
 ```bash
-psql -U postgres -d crimenes -f pipeline_scripts/02_data_cleaning.sql
+# Desde la raíz del repositorio:
+psql -U tuUsuario -d crimenes -f pipeline_scripts/02_data_cleaning.sql
 ```
 
-**Estado Final:** Una tabla `cleaning.chicago_crimes` con 14 columnas, tipos de datos optimizados y lista para la fase de normalización relacional.
-
-### 4. Ejecución del Proceso
-
-El script de limpieza es **idempotente** (utiliza un *refresh* destructivo del schema `cleaning`), asegurando que siempre se trabaje sobre una versión limpia de los datos.
-
-```bash
-psql -U postgres -d crimenes -f pipeline_scripts/02_data_cleaning.sql
-```
-
-**Estado Final:** Una tabla `cleaning.chicago_crimes` con 14 columnas, tipos de datos optimizados y lista para la fase de normalización relacional.
+**Estado final:** tabla `cleaning.chicago_crimes` con **15 columnas** (`case_number`, `incident_timestamp`, `block`, `iucr`, `primary_description`, `secondary_description`, `location_description`, `arrest`, `domestic`, `beat`, `ward`, `fbi_cd`, `x_coordinate`, `y_coordinate`, `latitude`, `longitude`), tipos optimizados y lista para `03_data_normalization.sql`.
 
 ## Actividad D: Normalización a 4FN (`normalization` schema)
 
@@ -486,17 +482,23 @@ psql -U postgres -d crimenes -f pipeline_scripts/02_data_cleaning.sql
 
 ```sql
 -- Catálogos (derivados 100% de cleaning con SELECT DISTINCT)
-normalization.beat            (beat_id SERIAL PK, beat VARCHAR UNIQUE)
-normalization.ward            (ward_id SMALLINT PK)
-normalization.fbi_code        (fbi_cd VARCHAR(10) PK)
-normalization.iucr            (iucr_id SERIAL PK, iucr VARCHAR UNIQUE, 
-                               primary_description, secondary_description, fbi_cd FK)
-normalization.location_type   (location_type_id SERIAL PK, location_description VARCHAR UNIQUE)
+normalization.beat            (beat_id SERIAL PK, beat VARCHAR(10) UNIQUE NOT NULL)
+normalization.ward          (ward_id SMALLINT PK)              -- clave = número de ward
+normalization.fbi_code      (fbi_cd VARCHAR(10) PK)
+normalization.iucr          (iucr_id SERIAL PK, iucr VARCHAR(10) UNIQUE NOT NULL,
+                             primary_description, secondary_description,
+                             index_code, active,                -- reservados; NULL si no vienen del cleaning
+                             fbi_cd VARCHAR REFERENCES normalization.fbi_code(fbi_cd))
+normalization.location_type (location_type_id SERIAL PK, location_description VARCHAR(200) UNIQUE)
 
--- Tabla de hechos
-normalization.incident        (incident_id SERIAL PK, case_number VARCHAR UNIQUE,
-                               date_occurrence TIMESTAMP, arrest BOOLEAN, domestic BOOLEAN,
-                               beat_id FK, ward_id FK, iucr_id FK, location_type_id FK)
+-- Tabla de hechos (atributos no descompuestos en catálogos + FKs)
+normalization.incident      (incident_id SERIAL PK, case_number VARCHAR(20) UNIQUE NOT NULL,
+                             date_occurrence TIMESTAMP,         -- desde cleaning.incident_timestamp
+                             block VARCHAR(200),
+                             arrest BOOLEAN, domestic BOOLEAN,
+                             x_coordinate INTEGER, y_coordinate INTEGER,
+                             latitude NUMERIC(12,9), longitude NUMERIC(12,9),
+                             beat_id FK, ward_id FK, iucr_id FK, location_type_id FK)
 ```
 
 ### 3. Decisiones de Diseño
@@ -511,12 +513,13 @@ normalization.incident        (incident_id SERIAL PK, case_number VARCHAR UNIQUE
    ```
    No se usan archivos CSV externos. Garantiza consistencia: los datos que se normalizan son exactamente lo que se limpió.
 
-4. **Llaves surrogadas:** Todas las tablas usan SERIAL para PK, preservando claves naturales como UNIQUE constraints.
+4. **Llaves:** `beat`, `iucr` y `location_type` usan `SERIAL` como PK surrogada; `ward` usa el número de ward como PK (`SMALLINT`); `fbi_code` usa `fbi_cd` como PK natural. Las claves naturales relevantes se preservan con `UNIQUE` donde aplica.
 
 5. **Índices post-carga:** Se crean 6 índices en las columnas de mayor uso analítico (`beat_id`, `ward_id`, `iucr_id`, `date_occurrence`, `arrest`) al final para optimizar sin ralentizar inserts masivos.
 
 **Ejecución:**
 ```bash
+# Desde la raíz del repositorio:
 psql -U tuUsuario -d crimenes -f pipeline_scripts/03_data_normalization.sql
 ```
 
@@ -546,7 +549,17 @@ UNION ALL SELECT 'normalization.incident', COUNT(*) FROM normalization.incident;
 
 **Archivo:** `exploration_queries/02_analytical_queries.sql`
 
-Todas las consultas se ejecutan sobre `normalization.*` y usan funciones de ventana SQL avanzadas para análisis temporal y rankings.
+El script exporta **diez** conjuntos de resultados como CSV bajo `results_csv/` (`01_tendencia_mensual.csv` … `10_top20_hotspots_bloques.csv`) usando `\o` y `\pset format csv`. Debe ejecutarse **después** de `03_data_normalization.sql` (las consultas 1–4, 8–10 leen `normalization.*`).
+
+**Origen de datos por bloque:**
+
+| Consultas | Esquema principal | Notas |
+| :--- | :--- | :--- |
+| 1–4 | `normalization` | Tendencia mensual, tasa de arresto por tipo, variación mes–mes por ward, franja horaria (incluyen `RANK`, `LAG`, ventanas). |
+| 5–7 | `raw` | Top beats por distrito, evolución mensual agregada, porcentaje por tipo de ubicación — **sin** deduplicación ni reglas de limpieza; pueden incluir filas duplicadas por `case_number`. |
+| 8–10 | `normalization` | Día de la semana, domésticos vs no domésticos, hotspots por `block`. |
+
+Las secciones narrativas siguientes se centran en las cuatro primeras consultas (ventanas sobre datos normalizados); las preguntas 5–7 están desarrolladas más abajo y reflejan el SQL actual (incluido el uso de `raw` donde aplica).
 
 ### Query 1: Tendencia Mensual de Criminalidad
 
@@ -623,11 +636,11 @@ month_over_month_delta = total_incidents - LAG(total_incidents) OVER (...)
 
 # Análisis de Preguntas Clave
 
-> Todos los resultados se obtienen sobre el dataset con la limpieza preliminar aplicada: duplicados de `case_number` resueltos conservando el registro más reciente, strings vacíos tratados como `NULL`, y `date_occurrence` casteado a `TIMESTAMP`.
+> Los hallazgos de las **consultas 1–4 y 8–10** se basan en el esquema `normalization` (deduplicación por `case_number`, nulos normalizados, etc.). Las **consultas 5–7** leen `raw.chicago_crimes`; interpreta sus totales como datos crudos, no necesariamente alineados con los 232,593 incidentes únicos post-limpieza.
 
 ---
 
-## Query 5: 3 zonas de patrullaje (beat) con mayor cantidad de crímenes dentro de cada distrito policial
+## Query 5: 3 zonas de patrullaje (beat) con mayor cantidad de crímenes dentro de cada distrito policial *(fuente: `raw.chicago_crimes`)*
 
 El distrito policial se obtiene de los primeros 2 dígitos del `beat` (rellenando con ceros a la izquierda para los beats de 3 dígitos).
 
@@ -645,7 +658,7 @@ El beat `1834` del distrito 18 destaca como el de mayor incidencia en todo Chica
 
 ---
 
-## Query 6: ¿Cómo evoluciona la criminalidad mes a mes? ¿Cuál fue el aumento o disminución exacta de incidentes respecto al mes anterior?
+## Query 6: ¿Cómo evoluciona la criminalidad mes a mes? ¿Cuál fue el aumento o disminución exacta de incidentes respecto al mes anterior? *(fuente: `raw.chicago_crimes`)*
 
 | Mes | Conteo | Diferencia | Cambio % |
 |---|---|---|---|
@@ -669,7 +682,7 @@ El pico de criminalidad ocurre en **julio 2025** con 22,646 incidentes, consiste
 
 ---
 
-## Query 7: Porcentaje del total histórico de crímenes aporta cada tipo de ubicación al problema de inseguridad
+## Query 7: Porcentaje del total histórico de crímenes aporta cada tipo de ubicación al problema de inseguridad *(fuente: `raw.chicago_crimes`)*
 
 | Tipo de Ubicación | Conteo | Porcentaje |
 |---|---|---|
@@ -692,10 +705,11 @@ La **calle** concentra el 27.12% de todos los crímenes — más de uno de cada 
 ## Ejecución de Queries
 
 ```bash
+# Desde la raíz del repositorio (requiere carpeta results_csv/):
 psql -U tuUsuario -d crimenes -f exploration_queries/02_analytical_queries.sql
 ```
 
-Salida esperada: 4 tablas con resultados analíticos listos para visualización/reporte.
+Salida: **10 archivos CSV** en `results_csv/`, listos para visualización o reporte.
 
 ---
 
@@ -703,15 +717,17 @@ Salida esperada: 4 tablas con resultados analíticos listos para visualización/
 
 | Métrica | Valor |
 | :--- | :--- |
-| Registros raw cargados | 232,615 |
-| Registros después de dedup | 232,593 |
+| Registros raw cargados (corrida de referencia, Actividad B) | 232,615 |
+| Registros después de dedup (cleaning / incident) | 232,593 |
 | Relvars en 4FN | 6 |
 | Catálogos únicos (beats, wards, IUCRs, FBI codes) | 274 + 50 + 333 + 26 = 683 |
-| Consultas analíticas ejecutadas | 4 (con window functions) |
+| Salidas CSV del script analítico | 10 (`results_csv/`) |
 | Tasa de arresto global | 15.5% (36,071 / 232,593) |
 | Mayor volumen de delito | Theft (53,079 incidentes, 22.8% del total) |
 | Mes de mayor criminalidad | Julio (22,643 incidentes) |
 | Franja horaria de riesgo máximo | Tarde 12-17h (31.4% del total) |
+
+*Las métricas numéricas corresponden al CSV y corridas documentadas en el informe; otra versión del archivo fuente puede cambiar conteos ligeramente.*
 
 ---
 
@@ -720,10 +736,11 @@ Salida esperada: 4 tablas con resultados analíticos listos para visualización/
 ## Reproducibilidad
 
 El pipeline es 100% reproducible y autocontenido:
-- Solo requiere `raw_data.csv` (descargable del Chicago Data Portal)
+- Solo requiere `data/raw_data.csv` (descargable del Chicago Data Portal o del enlace del equipo)
 - Todos los catálogos se derivan del cleaning con `SELECT DISTINCT`
-- Sin archivos externos, sin hardcoding
-- Scripts idempotentes (refresh destructivo, DROP CASCADE)
+- Sin archivos CSV auxiliares para catálogos, sin *hardcoding* de dimensiones de negocio en los scripts del pipeline
+- Scripts idempotentes (refresh destructivo, `DROP CASCADE` de esquemas)
+- **Cifras en el README:** son referencia del snapshot usado en el proyecto; valida con tus propios `COUNT(*)` si cambias el CSV
 
 ## Limitaciones Éticas Reconocidas
 
@@ -744,7 +761,6 @@ El pipeline es 100% reproducible y autocontenido:
 - `idx_incident_date` en `date_occurrence`
 - `idx_incident_arrest` en `arrest` (para filtros de tasa de arresto)
 
-## Conclusiones
 ## Conclusiones
 
 Chicago no es una ciudad uniformemente peligrosa. Es una ciudad con patrones. La criminalidad no se distribuye al azar: tiene estaciones, tiene geografías y afecta desproporcionadamente los espacios donde la gente vive y transita en su día a día. El análisis deja claro que los crímenes siguen ciclos predecibles, se concentran en zonas específicas y golpean sobre todo en la calle y en el hogar, que son precisamente los lugares donde uno menos debería tener que cuidarse.

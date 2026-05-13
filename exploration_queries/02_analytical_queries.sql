@@ -149,7 +149,7 @@ ORDER BY distrito, rank;
 WITH mensual AS (
     SELECT
         TO_CHAR(
-            TO_TIMESTAMP(date_occurrence, 'MM/DD/YYYY HH:MI:SS AM'),
+            TO_TIMESTAMP(date_occurrence, 'MM/DD/YYYY HH12:MI:SS AM'),
             'YYYY-MM'
         )        AS mes,
         COUNT(*) AS conteo
