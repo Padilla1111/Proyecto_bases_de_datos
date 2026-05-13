@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chicago Crime Analysis · 2025–2026</title>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d1117;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #e6edf3;
+      line-height: 1.5;
+    }
+    /* Estilo para simular la fuente mono si no carga la externa */
+    .mono { font-family: 'ui-monospace', 'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace; }
+    
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #161b22; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+    const {
+      ComposedChart, Bar, LineChart, Line,
+      XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+    } = Recharts;
+
+    // ── DATOS ORIGINALES ────────────────────────────────────────────────────────
+    const MONTHLY = [
+      { month: "Ene", incidents: 16822, arrest_rate: 16.50, rank: 11 },
+      { month: "Feb", incidents: 16358, arrest_rate: 16.13, rank: 12 },
+      { month: "Mar", incidents: 18813, arrest_rate: 15.02, rank:  7 },
+      { month: "Abr", incidents: 17933, arrest_rate: 14.54, rank:  9 },
+      { month: "May", incidents: 20488, arrest_rate: 15.81, rank:  5 },
+      { month: "Jun", incidents: 21102, arrest_rate: 14.98, rank:  3 },
+      { month: "Jul", incidents: 22643, arrest_rate: 15.61, rank:  1 },
+      { month: "Ago", incidents: 21317, arrest_rate: 15.03, rank:  2 },
+      { month: "Sep", incidents: 20325, arrest_rate: 15.23, rank:  6 },
+      { month: "Oct", incidents: 20955, arrest_rate: 14.68, rank:  4 },
+      { month: "Nov", incidents: 18388, arrest_rate: 15.73, rank:  8 },
+      { month: "Dic", incidents: 17449, arrest_rate: 14.67, rank: 10 },
+    ];
+
+    const CRIMES = [
+      { name: "CONCEALED CARRY",    rate: 97.27, total:   220 },
+      { name: "NARCOTICS",          rate: 94.02, total:  6717 },
+      { name: "LIQUOR LAW",         rate: 93.68, total:   190 },
+      { name: "INTERFERENCE/PUBLIC",rate: 91.10, total:   910 },
+      { name: "PROSTITUTION",       rate: 89.95, total:   189 },
+      { name: "WEAPONS VIOLATION",  rate: 77.07, total:  5051 },
+      { name: "PUBLIC PEACE",       rate: 51.21, total:  1078 },
+      { name: "CRIMINAL TRESPASS",  rate: 32.27, total:  5352 },
+      { name: "HOMICIDE",           rate: 27.40, total:   416 },
+      { name: "BATTERY",            rate: 18.97, total: 42446 },
+      { name: "OTHER OFFENSE",      rate: 17.98, total: 15911 },
+      { name: "ASSAULT",            rate: 12.50, total: 21248 },
+      { name: "ARSON",              rate: 10.86, total:   350 },
+      { name: "ROBBERY",            rate:  9.30, total:  5365 },
+      { name: "THEFT",              rate:  8.82, total: 53079 },
+      { name: "SEX OFFENSE",        rate:  7.79, total:  1283 },
+      { name: "OFFENSE/CHILDREN",   rate:  6.98, total:  1519 },
+      { name: "STALKING",           rate:  4.33, total:   577 },
+      { name: "CRIMINAL DAMAGE",    rate:  4.25, total: 26117 },
+      { name: "BURGLARY",           rate:  3.81, total: 11113 },
+      { name: "MOTOR VEH. THEFT",   rate:  3.20, total: 17649 },
+      { name: "DECEPTIVE PRACTICE", rate:  2.85, total: 13808 },
+      { name: "CRIM. SEXUAL ASSAULT",rate:  2.71, total:  1625 },
+      { name: "INTIMIDATION",       rate:  0.56, total:   180 },
+    ];
+
+    const WARDS_RAW = {
+       6: [ 87, 792, 787, 897, 777, 711, 775, 692, 684, 660, 581, 678, 572],
+      27: [122,1036,1008,1124,1043, 997,1040, 846, 807, 833, 726, 908, 662],
+      28: [111, 937, 938,1062, 995, 922, 948, 791, 700, 747, 699, 781, 724],
+      42: [ 78, 775, 793, 880, 870, 814, 864, 676, 681, 547, 549, 706, 484],
+       3: [ 74, 517, 527, 557, 534, 549, 534, 463, 496, 496, 487, 540, 387],
+      50: [ 15, 174, 211, 237, 224, 240, 232, 213, 169, 160, 164, 221, 160],
+    };
+    const MONTHS_LABEL = ["Abr'25","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic","Ene'26","Feb","Mar","Abr'26"];
+    const WARD_DATA = MONTHS_LABEL.map((m, i) => {
+      const obj = { month: m };
+      Object.entries(WARDS_RAW).forEach(([ward, vals]) => { obj[`W${ward}`] = vals[i]; });
+      return obj;
+    });
+
+    const HORARIO = [
+      { name: "Tarde 12–17h",   value: 73033, rate: 15.63, color: "#F4A261" },
+      { name: "Noche 18–23h",   value: 65325, rate: 18.21, color: "#E76F51" },
+      { name: "Mañana 6–11h",   value: 49088, rate: 13.63, color: "#2A9D8F" },
+      { name: "Madrugada 0–5h", value: 45147, rate: 12.43, color: "#4a6075" },
+    ];
+
+    const WARD_COLORS = {
+      W27: "#E63946", W28: "#F4A261", W42: "#A8DADC",
+      W6:  "#457B9D", W3:  "#2A9D8F", W50: "#8D99AE",
+    };
+
+    const fmt = (n) => n >= 1000 ? `${(n / 1000).toFixed(0)}k` : String(n);
+
+    const getColor = (rate) => {
+      if (rate >= 70) return "#2ea043";
+      if (rate >= 30) return "#d29922";
+      if (rate >= 10) return "#f4a261";
+      return "#f85149";
+    };
+
+    const CustomTooltip = ({ active, payload, label }) => {
+      if (!active || !payload?.length) return null;
+      return (
+        <div style={{
+          background: "#0d1117", border: "1px solid #30363d", borderRadius: 8,
+          padding: "10px 14px", fontSize: 12, color: "#e6edf3",
+        }}>
+          <p style={{ margin: "0 0 6px", fontWeight: 700, color: "#58a6ff" }}>{label}</p>
+          {payload.map((p, i) => (
+            <p key={i} style={{ margin: "2px 0", color: p.color || "#e6edf3" }}>
+              {p.name}: <strong>{typeof p.value === "number" ? p.value.toLocaleString() : p.value}</strong>
+              {p.name === "Incidentes" && " delitos"}
+              {p.name === "Tasa arresto" && "%"}
+            </p>
+          ))}
+        </div>
+      );
+    };
+
+    function Dashboard() {
+      const [activeWards, setActiveWards] = useState(new Set(["W27", "W28", "W42", "W6"]));
+
+      const toggleWard = (w) =>
+        setActiveWards(prev => {
+          const next = new Set(prev);
+          if (next.has(w)) { if (next.size > 1) next.delete(w); }
+          else next.add(w);
+          return next;
+        });
+
+      const card = { background: "#161b22", border: "1px solid #21262d", borderRadius: 12, padding: "20px 16px" };
+      const cardTitle = { margin: "0 0 4px", fontSize: 13, fontWeight: 600, color: "#f0f6fc" };
+      const cardSub = { margin: "0 0 16px", fontSize: 11, color: "#6e7681" };
+      const insight = { marginTop: 12, padding: "8px 12px", background: "#0d1117", borderRadius: 8, border: "1px solid #21262d" };
+
+      return (
+        <div style={{ padding: "32px 24px" }} className="mono">
+          {/* HEADER */}
+          <div style={{ marginBottom: 40 }}>
+            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: "#f0f6fc" }}>Chicago Crime Analysis</h1>
+            <p style={{ margin: "8px 0 0", color: "#8b949e", fontSize: 13 }}>
+              Abril 2025 – Marzo 2026 · 232,593 incidentes procesados
+            </p>
+          </div>
+
+          {/* KPIs */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 32 }}>
+            {[
+              { label: "Total incidentes", value: "232,593", sub: "normalizado 4FN" },
+              { label: "Tasa arresto", value: "15.5%", sub: "~36k arrestos" },
+              { label: "Top Delito", value: "THEFT", sub: "53,079 casos" },
+              { label: "Mes pico", value: "Julio", sub: "22,643 incidentes" },
+            ].map((k, i) => (
+              <div key={i} style={card}>
+                <p style={{ margin: 0, fontSize: 10, color: "#8b949e", letterSpacing: 1 }}>{k.label.toUpperCase()}</p>
+                <p style={{ margin: "4px 0", fontSize: 22, fontWeight: 700, color: "#58a6ff" }}>{k.value}</p>
+                <p style={{ margin: 0, fontSize: 11, color: "#6e7681" }}>{k.sub}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* FILA 1: MENSUAL + HORARIO */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: 16, marginBottom: 16 }}>
+            <div style={card}>
+              <p style={cardTitle}>Tendencia Mensual</p>
+              <p style={cardSub}>Volumen vs Tasa de Arresto</p>
+              <div style={{ height: 220 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={MONTHLY}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fill: "#8b949e", fontSize: 11 }} />
+                    <YAxis yAxisId="left" tick={{ fill: "#8b949e", fontSize: 11 }} tickFormatter={fmt} domain={[14000, 24000]} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fill: "#2ea043", fontSize: 11 }} tickFormatter={v => `${v}%`} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar yAxisId="left" dataKey="incidents" name="Incidentes" radius={[4, 4, 0, 0]}>
+                      {MONTHLY.map((m, i) => (
+                        <Cell key={i} fill={m.rank === 1 ? "#f85149" : m.rank <= 3 ? "#d29922" : "#1f6feb"} />
+                      ))}
+                    </Bar>
+                    <Line yAxisId="right" type="monotone" dataKey="arrest_rate" name="Tasa arresto" stroke="#2ea043" strokeWidth={2} dot={{ r: 3 }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div style={card}>
+              <p style={cardTitle}>Distribución Horaria</p>
+              <p style={cardSub}>Incidentes por franja del día</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {HORARIO.map(h => (
+                  <div key={h.name}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 11 }}>
+                      <span>{h.name}</span>
+                      <span>{h.rate}% arresto</span>
+                    </div>
+                    <div style={{ height: 8, background: "#21262d", borderRadius: 4 }}>
+                      <div style={{ height: "100%", width: `${(h.value / 73033) * 100}%`, background: h.color, borderRadius: 4 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* FILA 2: CRÍMENES + WARDS */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: 16 }}>
+            <div style={card}>
+              <p style={cardTitle}>Tasa de Arresto por Tipo</p>
+              <div style={{ overflowY: "auto", maxHeight: 300, marginTop: 10 }}>
+                {CRIMES.map((c, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid #21262d" }}>
+                    <span style={{ fontSize: 11, width: 140, flexShrink: 0 }}>{c.name}</span>
+                    <div style={{ flex: 1, height: 4, background: "#21262d", borderRadius: 2 }}>
+                      <div style={{ height: "100%", width: `${c.rate}%`, background: getColor(c.rate), borderRadius: 2 }} />
+                    </div>
+                    <span style={{ fontSize: 11, width: 40, textAlign: "right", color: getColor(c.rate), fontWeight: "bold" }}>{c.rate}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={card}>
+              <p style={cardTitle}>Evolución por Ward</p>
+              <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+                {Object.entries(WARD_COLORS).map(([w, c]) => (
+                  <button key={w} onClick={() => toggleWard(w)} style={{
+                    padding: "2px 8px", borderRadius: 12, fontSize: 10, cursor: "pointer",
+                    background: activeWards.has(w) ? c : "transparent",
+                    color: activeWards.has(w) ? "#0d1117" : "#8b949e",
+                    border: `1px solid ${c}`, fontWeight: "bold"
+                  }}>W{w.slice(1)}</button>
+                ))}
+              </div>
+              <div style={{ height: 240 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={WARD_DATA}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fill: "#8b949e", fontSize: 10 }} />
+                    <YAxis tick={{ fill: "#8b949e", fontSize: 10 }} tickFormatter={fmt} />
+                    <Tooltip contentStyle={{ background: "#0d1117", border: "1px solid #30363d" }} />
+                    {Object.entries(WARD_COLORS).map(([w, c]) => 
+                      activeWards.has(w) && <Line key={w} type="monotone" dataKey={w} stroke={c} strokeWidth={2} dot={false} />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<Dashboard />);
+  </script>
+</body>
+</html>
