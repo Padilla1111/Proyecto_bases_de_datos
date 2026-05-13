@@ -142,17 +142,17 @@ CREATE TABLE normalization.iucr (
 );
 
 INSERT INTO normalization.iucr (iucr, primary_description, secondary_description, index_code, active, fbi_cd)
-SELECT DISTINCT
+SELECT DISTINCT ON (TRIM(c.iucr))
     TRIM(c.iucr),
     TRIM(c.primary_description),
     CASE WHEN TRIM(c.secondary_description) <> '' THEN TRIM(c.secondary_description) ELSE NULL END,
-    NULL::VARCHAR(5),  -- index_code no está disponible en los datos limpios
-    NULL::BOOLEAN,     -- active no está disponible en los datos limpios
+    NULL::VARCHAR(5),
+    NULL::BOOLEAN,
     CASE WHEN TRIM(c.fbi_cd) <> '' THEN TRIM(c.fbi_cd) ELSE NULL END
 FROM cleaning.chicago_crimes c
-WHERE c.iucr IS NOT NULL
+WHERE c.iucr IS NOT NULL 
   AND TRIM(c.iucr) <> ''
-ORDER BY 1;
+ORDER BY TRIM(c.iucr), c.incident_timestamp DESC;
 
 
 -- -----------------------------------------------------------------------------
