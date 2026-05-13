@@ -80,8 +80,7 @@ Para que los scripts de carga funcionen sin errores, es obligatorio seguir este 
 │
 └── exploration_queries                               <- Scripts de SQL para exploración de datos
     ├── 01_raw_data_exploration.sql                   <- Consultas de exploración de datos en bruto (i.e., soporte de actividad B)
-    ├── ⋅⋅⋅                                           <- Otras consultas en caso de ser requeridas
-    └── 0N_analytical_queries.sql                     <- Consultas de interés sobre los datos normalizados (i.e., soporte de actividad 
+    └── 02_analytical_queries.sql                     <- Consultas de interés sobre los datos normalizados (i.e., soporte de actividad E)
 ```
 
 # Carga inicial y análisis preliminar
@@ -107,7 +106,7 @@ psql -U postgres -d crimenes -c "SELECT COUNT(*) FROM rawc.crimes;"
 Para ejecutar el análisis preliminar, asegúrate de estar en la raíz del proyecto en tu terminal y ejecuta el siguiente comando:
 
 ```bash
-psql -d crime_chicago -f exploration_queries/01_raw_data_exploration.sql
+psql -U [tuUsuario] -d crimenes -f exploration_queries/01_raw_data_exploration.sql
 ```
 
 ## Descripción de Columnas y Valores Únicos
@@ -372,7 +371,7 @@ El proceso de limpieza sigue una metodología de **refresh destructivo** mediant
 Para ejecutar la limpieza de datos, asegúrate de estar en la raíz del proyecto en tu terminal y ejecuta el siguiente comando:
 
 ```bash
-psql -d crime_chicago -f pipeline_scripts/02_data_cleaning.sql
+psql -U [tuUsuario] -d crimenes -f pipeline_scripts/02_data_cleaning.sql
 ```
 
 ### 2. Actividades de Limpieza Realizadas
@@ -467,3 +466,5 @@ psql -U [tuUsuario] -d crimenes -f exploration_queries/02_analytical_queries.sql
 | :--- | :--- |
 | 1 | ¿En qué mes del año ocurren más crímenes? ¿Varía la tasa de arresto estacionalmente? |
 | 2 | ¿Qué tipos de crimen tienen la tasa de arresto más alta y más baja (con más de 100 incidentes)? |
+| 3 | ¿Qué distritos concentran el mayor volumen de criminalidad y qué porcentaje del total representan? |
+| 4 | ¿En qué franja horaria se concentran más delitos y cómo varía la tasa de arresto entre franjas? |
