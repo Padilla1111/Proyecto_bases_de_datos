@@ -75,7 +75,7 @@ Link: https://data.cityofchicago.org/Public-Safety/Crimes-One-year-prior-to-pres
 - Registros totales: ~232,600 (muestra de trabajo: 232,593 después de limpieza)
 - Requisito cumplido: >5,000 tuplas
 
-### ⚙️ Configuración para Replicación
+###  Configuración para Replicación
 
 1. Crea una carpeta `data/` en la raíz del proyecto
 2. Descarga `raw_data.csv` desde el Chicago Data Portal
