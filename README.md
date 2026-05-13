@@ -54,8 +54,8 @@ El análisis de datos de criminalidad conlleva una responsabilidad ética signif
 
 ## Fuente de datos
 
-Para este proyecto se utilizan los datos proporcionados por el portal de datos de Chicago. Se puede acceder a los datos en [este link (Crimes - One Year Prior to Present)](https://data.cityofchicago.org/Public-Safety/Crimes-One-year-prior-to-present/x2n5-8w5q/about_data).
-* **Instrucciones:** Para descargar el archivo exacto, haz clic en el botón **"Export"** en el portal y selecciona el formato **CSV**.
+Para este proyecto se utilizan los datos proporcionados por el portal de datos de Chicago. Se puede acceder a los datos actualizados al día de la descarga en [este link (Crimes - One Year Prior to Present)](https://data.cityofchicago.org/Public-Safety/Crimes-One-year-prior-to-present/x2n5-8w5q/about_data). Pero **para fines de consistencia** en el proyecto, se usó el archivo que contiene datos desde el 28 de Abril de 2025 hasta el 28 de Abril de 2026. El archivo está ubicado en [este link](https://drive.google.com/drive/folders/10-k0SMeGqK_xzf3rYdQ1Y15gDT14BL4y?usp=sharing)
+* **Instrucciones:** Para descargar el archivo exacto, haz clic en el los tres puntos a la derecha del nombre del archivo con etiqueta "Más acciones", y selecciona el botón **Descargar**.
 
 * **Escala:** El dataset contiene aproximadamente 200,000 registros, lo que cumple con el requisito de carga mínima (>5,000 tuplas).
 
