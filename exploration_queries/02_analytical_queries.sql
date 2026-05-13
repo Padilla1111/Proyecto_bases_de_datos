@@ -8,6 +8,10 @@
 --   psql -U [tuUsuario] -d crimenes -f exploration_queries/02_analytical_queries.sql
 -- =============================================================================
 
+-- =============================================================================
+-- CONFIGURACIÓN DE EXPORTACIÓN (No imprimir en consola, guardar en CSV)
+-- =============================================================================
+\pset format csv
 
 -- =============================================================================
 -- 1. Tendencia Mensual de Criminalidad
@@ -16,6 +20,7 @@
 -- Permite identificar si la efectividad policial varía estacionalmente,
 -- independientemente del volumen total de delitos.
 
+\o 'results_csv/01_tendencia_mensual.csv'
 SELECT
     EXTRACT(MONTH FROM i.date_occurrence)::SMALLINT          AS month,
     TO_CHAR(i.date_occurrence, 'TMMonth')                    AS month_name,
@@ -37,6 +42,7 @@ ORDER BY month;
 -- Se consideran solo tipos con más de 100 incidentes para evitar que
 -- categorías raras inflen artificialmente la tasa.
 
+\o 'results_csv/02_tasa_arresto_por_tipo.csv'
 SELECT
     ic.primary_description,
     COUNT(*)                                                 AS total_incidents,
@@ -59,6 +65,7 @@ ORDER BY arrest_rate_pct DESC;
 -- anterior? LAG() permite comparar cada ward consigo mismo en el tiempo,
 -- revelando tendencias locales de incremento o reducción.
 
+\o 'results_csv/03_variacion_mes_ward.csv'
 WITH monthly_ward AS (
     SELECT
         w.ward_id,
@@ -88,6 +95,7 @@ ORDER BY ward_id, month;
 -- ¿En qué franja horaria se concentran más delitos y cómo varía la
 -- tasa de arresto entre franjas?
 
+\o 'results_csv/04_distribucion_franja_horaria.csv'
 SELECT
     CASE
         WHEN EXTRACT(HOUR FROM i.date_occurrence) BETWEEN  0 AND  5 THEN 'Madrugada'
@@ -107,6 +115,8 @@ ORDER BY total_incidents DESC;
 -- =============================================================================
 -- ¿Cuáles son las 3 zonas de patrullaje (beat) con mayor cantidad de crímenes
 -- dentro de cada distrito policial?
+
+\o 'results_csv/05_top3_beats_distrito.csv'
 WITH beats_clasificados AS (
     SELECT
         SUBSTRING(LPAD(beat::TEXT, 4, '0'), 1, 2)::INTEGER AS distrito,
@@ -134,6 +144,8 @@ ORDER BY distrito, rank;
 -- =============================================================================
 -- ¿Cómo evoluciona la criminalidad mes a mes? ¿Cuál fue el aumento o
 -- disminución exacta de incidentes respecto al mes anterior?
+
+\o 'results_csv/06_evolucion_mensual.csv'
 WITH mensual AS (
     SELECT
         TO_CHAR(
@@ -161,6 +173,8 @@ ORDER BY mes;
 -- =============================================================================
 -- ¿Qué porcentaje del total histórico de crímenes aporta cada tipo de
 -- ubicación al problema de inseguridad en la ciudad?
+
+\o 'results_csv/07_porcentaje_crimenes_ubicacion.csv'
 WITH total AS (
     SELECT COUNT(*) AS total_crimenes
     FROM raw.chicago_crimes
@@ -176,3 +190,9 @@ WHERE location_description IS NOT NULL
   AND location_description != ''
 GROUP BY location_description
 ORDER BY conteo DESC;
+
+-- =============================================================================
+-- Restaurar la salida a la consola (opcional)
+-- =============================================================================
+\o
+\pset format aligned

@@ -1,0 +1,13 @@
+month,month_name,total_incidents,total_arrests,arrest_rate_pct,rank_by_volume
+1,Enero,16822,2776,16.50,11
+2,Febrero,16358,2638,16.13,12
+3,Marzo,18813,2825,15.02,7
+4,Abril,17933,2607,14.54,9
+5,Mayo,20488,3239,15.81,5
+6,Junio,21102,3161,14.98,3
+7,Julio,22643,3534,15.61,1
+8,Agosto,21317,3204,15.03,2
+9,Septiembre,20325,3096,15.23,6
+10,Octubre,20955,3077,14.68,4
+11,Noviembre,18388,2892,15.73,8
+12,Diciembre,17449,2560,14.67,10
